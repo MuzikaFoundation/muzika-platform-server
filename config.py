@@ -31,5 +31,8 @@ class Web3ProviderConfig:
     """
     Global constants for web3 provider for interacting with ethereum block chain.
     """
-    endpoint_url = 'http://localhost:8545' if os.environ.get('ENV') else 'https://api.myetherapi.com/eth'
+    endpoint_url = \
+        'http://localhost:8545' if os.environ.get('ENV') != 'production' \
+        else 'https://api.myetherapi.com/eth'
+
     timeout = 5

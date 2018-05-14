@@ -1,6 +1,7 @@
 
 from flask import Blueprint, request
 from modules.ipfs import RelayIpfs
+from modules.web3 import get_web3
 from modules.response import helper
 from modules.response import error_constants as ER
 
@@ -15,7 +16,7 @@ def _upload_paper():
     json form:
     {
         "hash": file hash string,
-        "" :
+        "address" : artist wallet address string (public-key hash)
     }
 
     Server downloads the paper file by its IPFS process from the client IPFS node and it creates a muzika contract
@@ -25,6 +26,7 @@ def _upload_paper():
     """
     json_form = request.get_json(force=True, silent=True)
     file_hash = json_form.get('hash')
+    wallet_address = json_form.get('address')
 
     # check request json
     if not isinstance(file_hash, str):
@@ -39,6 +41,7 @@ def _upload_paper():
     api.pin_add(file_hash)
 
     # TODO : create a contract for generating paper in block chain network
+    web3 = get_web3()
 
     return helper.response_ok({'status': 'success'})
 
