@@ -42,7 +42,7 @@ if env != 'production':
     for blueprint in development_blueprints:
         application.register_blueprint(blueprint)
 
-# register blueprints for producvtion
+# register blueprints for production
 if env == 'production':
     for blueprint in production_blueprints:
         application.register_blueprint(blueprint)
