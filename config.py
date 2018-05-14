@@ -4,6 +4,7 @@
 
  Global constants for server configuration.
 """
+import os
 
 
 class WebServerConfig:
@@ -24,3 +25,11 @@ class IPFSConfig:
     """
     node_address = '127.0.0.1'
     port = 4004
+
+
+class Web3ProviderConfig:
+    """
+    Global constants for web3 provider for interacting with ethereum block chain.
+    """
+    endpoint_url = 'http://localhost:8545' if os.environ.get('ENV') else 'https://api.myetherapi.com/eth'
+    timeout = 5
