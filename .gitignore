@@ -10,3 +10,5 @@ venv
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 /test.py
+/secret/*
+!/secret/.gitkeep
