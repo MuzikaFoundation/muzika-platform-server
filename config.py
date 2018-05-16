@@ -5,6 +5,7 @@
  Global constants for server configuration.
 """
 import os
+import json
 
 
 class WebServerConfig:
@@ -36,3 +37,10 @@ class Web3ProviderConfig:
         else 'https://api.myetherapi.com/eth'
 
     timeout = 5
+
+
+class MuzikaContractConfig:
+    """
+    Global constants for Muzika contracts.
+    """
+    build_path = './muzika-contract/build/contracts'
