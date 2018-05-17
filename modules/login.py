@@ -106,6 +106,16 @@ def jwt_check(func):
     >>> ....
 
     Decorate API function only when the API needs authentication.
+
+    If success to authenticate, it injects user information to the request instance.
+
+    >>> request.user
+    {
+      "user_id": ...,
+      "address": ...,
+      "name": ...,
+      ...
+    }
     """
     from functools import wraps
 
@@ -148,6 +158,9 @@ def jwt_check(func):
         # if decoded hash is not equal to calculated hash from database, it's invalid token
         if decoded_hash != real_hash:
             return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
+
+        # authenticated and inject user information
+        request.user = dict(sign_message_query)
 
         return func(*args, **kwargs)
 
