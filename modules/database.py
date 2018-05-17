@@ -22,8 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import URL
 
 __all__ = [
-    'session_scope',
-    'session_rdwr', 'session_rdonly',
+    'engine_rdonly', 'engine_rdwr'
 ]
 
 with open(os.path.join(os.path.dirname(__file__), '../secret/database.json')) as db_secret_file:
