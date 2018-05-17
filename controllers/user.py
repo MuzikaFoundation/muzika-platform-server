@@ -5,7 +5,6 @@ from modules import database as db
 from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
-from modules.signature import validate_signature
 from modules.web3 import get_web3
 
 blueprint = Blueprint('user', __name__, url_prefix='/api')
