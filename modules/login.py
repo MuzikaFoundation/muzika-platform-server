@@ -19,7 +19,7 @@ from sqlalchemy import text
 with open(os.path.join(os.path.dirname(__file__), '../secret/jwt.json')) as jwt_file:
     jwt_json = json.loads(jwt_file.read())
 
-JWT_SECRET_KEY = jwt_json['JWT_SECRET_KEY']
+JWT_SECRET_KEY = jwt_json['jwt_secret_key']
 
 
 def generate_jwt_token(connection, web3, address, signature, sign_message_id):
