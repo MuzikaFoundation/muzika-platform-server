@@ -1,15 +1,18 @@
 import os
 
 from config import WebServerConfig
-from controllers import artist
 from flask import Flask
+from controllers import (
+    artist, user
+)
 
 application = Flask(__name__)
 
 
 blueprints = [
     # define blueprints for both production and development
-    artist.blueprint
+    artist.blueprint,
+    user.blueprint
 ]
 
 production_blueprints = [
