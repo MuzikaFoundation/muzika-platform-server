@@ -2,6 +2,7 @@ from flask import Blueprint, request
 from sqlalchemy import text
 
 from modules import database as db
+from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
 from modules.signature import validate_signature
@@ -10,44 +11,42 @@ from modules.web3 import get_web3
 blueprint = Blueprint('user', __name__, url_prefix='/api')
 
 
-@blueprint.route('/user', methods=['POST'])
-def _register_user():
-    """
-    Sign up by wallet address.
-
-    It registers a wallet address to the muzika backend database. It does not save wallet address private key.
-
-    json form:
-    {
-        "signature": signature object,
-        "address": wallet address,
-        "nickname": nickname of the wallet address
-    }
-    """
-    json_form = request.get_json(force=True, silent=True)
-    signature = json_form.get('signature')
-    wallet_address = json_form.get('address')
-    nickname = json_form.get('nickname')
-
-    # check signature validation
-    web3 = get_web3()
-    if not validate_signature(web3, wallet_address, signature):
-        return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
-
-    # TODO : save wallet address to the database
-    raise NotImplementedError
-
-
 @blueprint.route('/user/<address>', methods=['GET'])
 def _get_user(address):
     """
     Returns an user information by wallet address
     """
-
     with db.engine_rdonly.connect() as connection:
         query = "SELECT * FROM `users` WHERE `address` = :address"
         user = connection.execute(text(query), address=address).fetchone()
         return helper.response_ok(dict(user))
+
+
+@blueprint.route('/user', methods=['PUT'])
+@jwt_check
+def _modify_user():
+    """
+    Modify user's information.
+    """
+    json_form = request.get_json(force=True, silent=True)
+    user_name = json_form.get('name')
+    address = request.user['address']
+
+    if not isinstance(user_name, str):
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    user_update_query_str = """
+        UPDATE `users`
+        SET
+          `name` = :user_name
+        WHERE `address` = :address
+    """
+
+    with db.engine_rdwr.connect() as connection:
+        if connection.execute(text(user_update_query_str), user_name=user_name, address=address).row_count:
+            return helper.response_ok({'status': 'success'})
+        else:
+            return helper.response_err(ER.ALREADY_EXIST, ER.ALREADY_EXIST_MSG)
 
 
 @blueprint.route('/login', methods=['POST'])

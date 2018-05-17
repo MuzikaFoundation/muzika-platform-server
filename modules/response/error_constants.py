@@ -14,3 +14,6 @@ NOT_EXIST_MSG = "Object does not exist."
 
 AUTHENTICATION_FAILED = 404
 AUTHENTICATION_FAILED_MSG = "Failed to authenticate."
+
+ALREADY_EXIST = 405
+ALREADY_EXIST_MSG = "Already exists."
