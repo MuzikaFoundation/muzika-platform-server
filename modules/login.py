@@ -9,15 +9,14 @@
 
 import datetime
 import hashlib
-import json
-import os
 
 import arrow
 import jwt
 from sqlalchemy import text
 
-with open(os.path.join(os.path.dirname(__file__), '../secret/jwt.json')) as jwt_file:
-    jwt_json = json.loads(jwt_file.read())
+from modules.secret import load_secret_json
+
+jwt_json = load_secret_json('jwt')
 
 JWT_SECRET_KEY = jwt_json['jwt_secret_key']
 

@@ -12,18 +12,16 @@
 
 """
 
-import os
-import json
-
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
+
+from modules.secret import load_secret_json
 
 __all__ = [
     'engine_rdonly', 'engine_rdwr'
 ]
 
-with open(os.path.join(os.path.dirname(__file__), '../secret/database.json')) as db_secret_file:
-    db_secret = json.loads(db_secret_file.read())
+db_secret = load_secret_json('database')
 
 try:
     rdonly_db_url = URL(**db_secret['db_rdonly'])
