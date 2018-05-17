@@ -42,6 +42,13 @@ def generate_jwt_token(connection, web3, address, signature, sign_message_id):
         WHERE `address` = :address
     """
 
+    user_insert_query_str = """
+        INSERT INTO `users`
+        SET
+          `address` = :address,
+          `name` = :user_name
+    """
+
     sign_message_query_str = """
         SELECT `message` FROM `sign_messages`
         WHERE `message_id` = :sign_message_id AND NOW() - `created_at` <= :expired LIMIT 1
@@ -64,7 +71,11 @@ def generate_jwt_token(connection, web3, address, signature, sign_message_id):
 
         # get user id by address
         user_id_query = connection.execute(text(user_id_query_str), address=address).fetchone()
-        user_id = user_id_query['user_id']
+        if user_id_query:
+            user_id = user_id_query['user_id']
+        else:
+            # if user(wallet) is not registered, register it with empty name
+            user_id = connection.execute(text(user_insert_query_str), address=address, name='').lastrowid
     except TypeError:
         # if sign message does not exist
         return None
