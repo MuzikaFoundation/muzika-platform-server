@@ -20,12 +20,10 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import URL
-from sqlalchemy.ext.declarative import declarative_base
 
 __all__ = [
     'session_scope',
     'session_rdwr', 'session_rdonly',
-    'Base'
 ]
 
 with open(os.path.join(os.path.dirname(__file__), '../secret/database.json')) as db_secret_file:
@@ -45,9 +43,6 @@ engine_rdwr = create_engine(rdwr_db_url, encoding='utf-8', pool_recycle=290)
 session_rdonly = sessionmaker(bind=engine_rdonly)
 session_rdwr = sessionmaker(bind=engine_rdwr)
 
-# define Base
-Base = declarative_base()
-
 
 @contextmanager
 def session_scope(writable=False, autocommit=True, autoflush=True):
@@ -58,9 +53,11 @@ def session_scope(writable=False, autocommit=True, autoflush=True):
 
     try:
         yield session
-        session.commit()
+        if autocommit is False:
+            session.commit()
     except Exception:
-        session.rollback()
+        if autocommit is False:
+            session.rollback()
         raise
     finally:
         session.close()
