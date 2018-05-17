@@ -44,3 +44,10 @@ class MuzikaContractConfig:
     Global constants for Muzika contracts.
     """
     build_path = './muzika-contract/build/contracts'
+
+
+class SignMessageConfig:
+    """
+    Global constants for sign message
+    """
+    expired_time = 24 * 60 * 60     # 1 day
