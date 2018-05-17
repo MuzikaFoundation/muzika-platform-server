@@ -34,7 +34,7 @@ def generate_jwt_token(connection, web3, address, signature, sign_message_id):
     :return: return JWT token if authenticated and generated, nor None if not authenticated.
     """
     from config import SignMessageConfig
-    from modules.authentication import generate_random_sign_message
+    from modules.sign_message import generate_random_sign_message
     from modules.signature import validate_signature
 
     user_id_query_str = """
