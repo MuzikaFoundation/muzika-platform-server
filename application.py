@@ -3,7 +3,7 @@ import os
 from config import WebServerConfig
 from flask import Flask
 from controllers import (
-    artist, user
+    artist, user, file
 )
 
 application = Flask(__name__)
@@ -12,7 +12,8 @@ application = Flask(__name__)
 blueprints = [
     # define blueprints for both production and development
     artist.blueprint,
-    user.blueprint
+    user.blueprint,
+    file.blueprint,
 ]
 
 production_blueprints = [
