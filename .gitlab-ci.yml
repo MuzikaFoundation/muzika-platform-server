@@ -1,4 +1,4 @@
-image: "${MUZIKA_PLATFORM_SERVER_IMAGE}"
+image: "$MUZIKA_PLATFORM_SERVER_IMAGE"
 
 stages:
   - deploy
