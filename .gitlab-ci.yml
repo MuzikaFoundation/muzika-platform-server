@@ -1,4 +1,4 @@
-image: "${MUZIKA_PLATFORM_SERVER_IMAGE}"
+image: mapiacompany/muzika-platform-server:latest
 
 stages:
   - deploy
