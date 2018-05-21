@@ -27,4 +27,4 @@ deploy:develop:
     - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*"
     - sh ./deploy/elb-deploy.sh
   only:
-    - master
+    - develop
