@@ -1,0 +1,17 @@
+image: $MUZIKA_PLATFORM_SERVER_IMAGE
+
+stages:
+  - deploy
+
+deploy:master:elb:
+  stage: deploy
+  variables:
+    ZIP_FILE: "dist.zip"
+  scripts:
+    - ipfs init
+    - python3.6 ./deploy/change_ipfs_config.py
+    - python3.6 ./deploy/secrets.py --download --bucket $S3_BUCKET
+    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*"
+    - sh ./deploy/elb-deploy.sh
+  only:
+    - master
