@@ -22,7 +22,7 @@ _credential = aws_config.get('credential')
 # if credential is not configured in secret json file
 if _credential is None:
     # load credentials from credentials profile (muzika profile)
-    session = boto3.Session(profile_name='muzika')
+    session = boto3.Session()
 else:
     # else, configure from secret json file
     session = boto3.Session(**_credential)
