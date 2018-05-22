@@ -1,9 +1,14 @@
 
 import os
 import json
+import argparse
+
+args = argparse.ArgumentParser()
+args.add_argument('--path', help='config file path')
+args = args.parse_args()
 
 # Loads configuration for IPFS
-ipfs_config_file = os.path.join(os.getenv("HOME"), ".ipfs", "config")
+ipfs_config_file = args.path or os.path.join(os.path.expanduser('~'), '.ipfs', "config")
 with open(ipfs_config_file) as f:
     config = json.loads(f.read())
 
