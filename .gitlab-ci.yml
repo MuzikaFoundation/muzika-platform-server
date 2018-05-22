@@ -8,7 +8,7 @@ deploy:master:elb:
   variables:
     ZIP_FILE: "dist.zip"
   script:
-    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*"
+    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
     - sh ./deploy/elb-deploy.sh
   only:
     - master
@@ -18,7 +18,7 @@ deploy:develop:
   variables:
     ZIP_FILE: "dist.zip"
   script:
-    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*"
+    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
     - sh ./deploy/elb-deploy.sh
   only:
     - develop
