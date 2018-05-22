@@ -12,3 +12,4 @@ venv
 /test.py
 /secret/*
 !/secret/.gitkeep
+/dist.zip
