@@ -20,12 +20,12 @@ args = args.parse_args()
 if (args.upload and args.download) or (not args.upload and not args.download):
     print('Select only one of uploading or downloading.')
 
-session = boto3.Session(profile_name='muzika')
+session = boto3.Session()
 s3 = session.client('s3')
 
 if args.upload:
     for secret_file in secret_files:
-        file_path = os.path.join('..', 'secret', secret_file)
+        file_path = os.path.join(os.path.dirname(__file__), '..', 'secret', secret_file)
         with open(file_path) as f:
             s3.put_object(
                 Bucket=args.bucket,
@@ -36,8 +36,8 @@ if args.upload:
 
 if args.download:
     for secret_file in secret_files:
-        file_path = os.path.join('..', 'secret', secret_file)
-        with open(file_path, 'w') as f:
+        file_path = os.path.join(os.path.dirname(__file__), '..', 'secret', secret_file)
+        with open(file_path, 'w+') as f:
             obj = s3.get_object(
                 Bucket=args.bucket,
                 Key='secret/{}'.format(secret_file)
