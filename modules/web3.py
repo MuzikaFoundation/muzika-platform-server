@@ -1,6 +1,7 @@
 
-from config import Web3ProviderConfig
 from web3 import Web3
+
+from config import Web3ProviderConfig
 
 
 def get_default_provider():

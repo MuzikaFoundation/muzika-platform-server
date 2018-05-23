@@ -5,8 +5,8 @@
  Secret files have private data such as password, private key, access key, and etc.
 """
 
-import os
 import json
+import os
 
 SECRET_DATA_DIRECTORY = os.path.join(os.path.dirname(__file__), '..', 'secret')
 

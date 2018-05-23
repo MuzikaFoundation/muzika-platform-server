@@ -1,8 +1,8 @@
 
-from modules.block.block import Block, AES_KEY_LENGTH, IV_SIZE
-from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
+from Crypto.PublicKey import RSA
 
+from modules.block.block import AES_KEY_LENGTH, IV_SIZE
 from modules.block.block_request import BlockRequest
 
 RSA_KEY_LENGTH = 2048

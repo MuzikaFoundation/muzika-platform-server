@@ -1,7 +1,8 @@
 
-from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto import Random
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
+
 from modules.block.block import AES_KEY_LENGTH, IV_SIZE
 
 

@@ -13,7 +13,6 @@
 import boto3
 from sqlalchemy import text
 
-from modules import database as db
 from modules.secret import load_secret_json
 
 aws_config = load_secret_json('aws')

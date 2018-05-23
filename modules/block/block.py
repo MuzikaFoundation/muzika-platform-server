@@ -3,11 +3,8 @@
  Block is data format for sending and receiving between the muzika nodes.
 """
 
-import hashlib
-
-from Crypto.Hash import keccak
 from Crypto import Random
-from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.Hash import keccak
 
 # AES key length (bit)
 AES_KEY_LENGTH = 256

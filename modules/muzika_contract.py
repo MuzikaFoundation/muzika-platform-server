@@ -1,8 +1,8 @@
 
-import os
 import json
-from config import MuzikaContractConfig
+import os
 
+from config import MuzikaContractConfig
 
 __all__ = [
     'MuzikaContractHandler'
