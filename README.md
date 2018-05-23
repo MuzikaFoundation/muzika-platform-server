@@ -21,15 +21,13 @@ client browser.
 $ vi ~/.ipfs/config
 {
   ...
-  "Datastore": {
-    ...
-    "Addresses": {
-      "Swarm": [
-        ...
-        "/ip4/0.0.0.0/tcp/4004/ws",
-      ]
-    }
+  "Addresses": {
+    "Swarm": [
+      ...
+      "/ip4/0.0.0.0/tcp/4004/ws",
+    ]
   }
+  ...
   "Swarm": {
     ...
     "DisableRelay": false,
