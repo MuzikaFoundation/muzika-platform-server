@@ -8,6 +8,14 @@ aws s3 cp "$ZIP_FILE" "s3://$S3_BUCKET/$S3_OBJECT_KEY"
 
 BRANCH=${CI_COMMIT_REF_NAME}
 
+if [ "$1" = "master" ]
+then
+    export EB_APP_ENV=$EB_APP_ENV_MASTER
+elif [ "$1" = "develop" ]
+then
+    export EB_APP_ENV=$EB_APP_ENV_DEVELOP
+fi
+
 # Create a new version in eb
 echo "Creating ElasticBeanstalk Application Version ..."
 aws elasticbeanstalk create-application-version \

@@ -11,7 +11,7 @@ deploy:master:elb:
   script:
     - cd ./muzika-contract && npm install && npm run contract:compile && cd ..
     - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
-    - sh ./deploy/elb-deploy.sh
+    - sh ./deploy/elb-deploy.sh master
   only:
     - master
 
@@ -23,6 +23,6 @@ deploy:develop:
   script:
     - cd ./muzika-contract && npm install && npm run contract:compile && cd ..
     - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
-    - sh ./deploy/elb-deploy.sh
+    - sh ./deploy/elb-deploy.sh develop
   only:
     - develop
