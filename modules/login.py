@@ -82,7 +82,9 @@ def generate_jwt_token(connection, web3, address, signature, sign_message_id):
     tz = arrow.now('Asia/Seoul').datetime
 
     # if validation failed, don't generate JWT token
-    if not validate_signature(web3, address, sig_obj={'message': sign_message, 'signature': signature}):
+    if not validate_signature(web3, address, sig_obj={'purpose': 'Login to Muzika!',
+                                                      'message': sign_message,
+                                                      'signature': signature}):
         return None
 
     # after checking validation, authenticated, so update sign message
