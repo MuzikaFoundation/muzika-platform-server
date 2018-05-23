@@ -7,6 +7,7 @@ deploy:master:elb:
   stage: deploy
   variables:
     ZIP_FILE: "dist.zip"
+    GIT_SUBMODULE_STRATEGY: recursive
   script:
     - cd ./muzika-contract && npm install && npm run contract:compile && cd ..
     - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
@@ -18,6 +19,7 @@ deploy:develop:
   stage: deploy
   variables:
     ZIP_FILE: "dist.zip"
+    GIT_SUBMODULE_STRATEGY: recursive
   script:
     - cd ./muzika-contract && npm install && npm run contract:compile && cd ..
     - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
