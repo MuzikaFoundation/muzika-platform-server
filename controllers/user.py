@@ -6,6 +6,8 @@ from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
 from modules.web3 import get_web3
+from modules.sign_message import generate_random_sign_message
+from modules.ethereum_address import check_address_format
 
 blueprint = Blueprint('user', __name__, url_prefix='/api')
 
@@ -13,11 +15,22 @@ blueprint = Blueprint('user', __name__, url_prefix='/api')
 @blueprint.route('/user/<address>', methods=['GET'])
 def _get_user(address):
     """
-    Returns an user information by wallet address
+    Returns an user information by wallet address.
+
+    If user(address) does not exist, give a random message for signing
     """
+    user_query_str = "SELECT * FROM `users` WHERE `address` = :address"
+
+    # if invalid address format, don't generate message
+    if not check_address_format(address):
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
     with db.engine_rdonly.connect() as connection:
-        query = "SELECT * FROM `users` WHERE `address` = :address"
-        user = connection.execute(text(query), address=address).fetchone()
+        user = connection.execute(text(user_query_str), address=address).fetchone()
+
+        if user is None:
+            return helper.response_ok({'message': generate_random_sign_message()})
+
         return helper.response_ok(dict(user))
 
 
