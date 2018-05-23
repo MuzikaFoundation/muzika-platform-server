@@ -1,13 +1,18 @@
 import os
 
-from config import WebServerConfig
 from flask import Flask
+from flask_cors import CORS
+
+from config import WebServerConfig
 from controllers import (
     artist, user, file
 )
+from modules.json_encoder import FlaskJSONEncoder
 
 application = Flask(__name__)
+CORS(application, max_age=31536000, supports_credentials=True)
 
+application.json_encoder = FlaskJSONEncoder
 
 blueprints = [
     # define blueprints for both production and development
