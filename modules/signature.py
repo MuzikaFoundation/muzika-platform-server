@@ -48,6 +48,7 @@ def validate_signature(web3, address, sig_obj):
         # if equal to address, it's valid signature.
         return recover_address.lower() == address.lower()
     except TypeError:
+        # if unsupported signature version or invalid variable format, fail to validate
         return False
     except ValueError:
         return False

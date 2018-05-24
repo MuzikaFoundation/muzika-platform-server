@@ -125,6 +125,9 @@ def construct_sign_message(purpose, message, version=1):
                 (msg_len >> 16) & 0xFF,
                 (msg_len >> 24) & 0xFF,
             ])
+    else:
+        # unsupported signature version
+        return None
 
     entire_message = b''.join([
         bytes([len(signed_message_header)]),  # length of signed message
