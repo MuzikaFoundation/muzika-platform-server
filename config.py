@@ -5,7 +5,6 @@
  Global constants for server configuration.
 """
 import os
-import json
 
 
 class WebServerConfig:
@@ -14,6 +13,8 @@ class WebServerConfig:
     """
     host = 'localhost'
     port = 7001
+    timezone = 'UTC'
+    issuer = 'http://muzika.network'
 
 
 class IPFSConfig:
@@ -50,4 +51,15 @@ class SignMessageConfig:
     """
     Global constants for sign message
     """
-    expired_time = 24 * 60 * 60     # 1 day
+    unsigned_message_expired_time = 60          # 1 minute
+    signed_message_expired_time = 24 * 60 * 60  # 1 day
+
+
+class CacheConfig:
+    """
+    Global constants for redis
+    """
+    cache_type = 'redis' if os.environ.get('ENV') == 'production' else 'local'
+    host = 'localhost'
+    port = 6379         # ignored if local cache
+    key_prefix = 'muzika-redis-cache'

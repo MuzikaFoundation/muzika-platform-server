@@ -69,34 +69,53 @@ def register_sign_message_by_address(connection, address, message=None):
     return message_id, message
 
 
-def get_message_for_user(connection, user_id):
+def get_message_for_user(user_id, cache=None):
     """
     Return a random sign message for the user.
 
     If it has in the database with not expired, return it and
     if not, it generates a new random sign message for the user.
     """
-    message_query_str = """
-        SELECT * FROM `sign_messages`
-        WHERE
-          `user_id` = :user_id AND
-          `created_at` >= :expired_at
-        ORDER BY
-          `message_id` DESC
-        LIMIT 1
-    """
     import datetime
     import arrow
-    from config import WebServerConfig
+    from config import WebServerConfig, SignMessageConfig
+    from modules.cache import MuzikaCache
 
-    expired_time = arrow.now(WebServerConfig.timezone).datetime - datetime.timedelta(seconds=60)
+    cache = cache or MuzikaCache()
+    msg_url = '/db/sign-message/{}'.format(user_id)
+    user_message_info = cache().get(msg_url)
+    current_time = arrow.now(WebServerConfig.timezone).datetime
 
-    message = connection.execute(text(message_query_str), user_id=user_id, expired_at=expired_time).fetchone()
+    # if expired message, ignore the message
+    if user_message_info and user_message_info['expired_at'] < current_time:
+        user_message_info = None
 
-    if message is None:
-        return register_sign_message_by_id(connection, user_id)
+    if user_message_info is None:
+        # if message is not in cache, make a new message
+        timeout = SignMessageConfig.unsigned_message_expired_time
+        expired_time = current_time + datetime.timedelta(seconds=timeout)
+        message = generate_random_sign_message()
+
+        # generate message
+        cache().set(msg_url, {
+            'sign_message': message,
+            'expired_at': expired_time
+        }, timeout=SignMessageConfig.unsigned_message_expired_time)
+
+        # return generated message
+        return message
+
     else:
-        return message['message_id'], message['message']
+        # if not expired message exists, return it
+        return user_message_info['sign_message']
+
+
+def expire_sign_message(user_id, cache=None):
+    from modules.cache import MuzikaCache
+
+    cache = cache or MuzikaCache()
+    msg_url = '/db/sign-message/{}'.format(user_id)
+    cache().delete(msg_url)
 
 
 def construct_sign_message(purpose, message, version=1):

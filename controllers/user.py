@@ -6,7 +6,7 @@ from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
 from modules.web3 import get_web3
-from modules.sign_message import generate_random_sign_message
+from modules.sign_message import generate_random_sign_message, get_message_for_user
 from modules.ethereum_address import check_address_format
 
 blueprint = Blueprint('user', __name__, url_prefix='/api')
@@ -25,13 +25,17 @@ def _get_user(address):
     if not check_address_format(address):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    with db.engine_rdonly.connect() as connection:
+    with db.engine_rdwr.connect() as connection:
         user = connection.execute(text(user_query_str), address=address).fetchone()
 
         if user is None:
             return helper.response_ok({'message': generate_random_sign_message()})
+        else:
+            user = dict(user)
+            message = get_message_for_user(user['user_id'])
+            user.update({'message': message})
 
-        return helper.response_ok(dict(user))
+        return helper.response_ok(user)
 
 
 @blueprint.route('/user', methods=['PUT'])
@@ -66,14 +70,21 @@ def _login():
     from modules.login import generate_jwt_token
 
     json_form = request.get_json(force=True, silent=True)
-    address = json_form('address')
-    signature = json_form('signature')
-    sign_message_id = json_form('message_id')
+    address = json_form.get('address')
+    signature = json_form.get('signature')
+    sign_message_id = json_form.get('message_id')
+    sign_message = json_form.get('message')     # only for unregistered user
+    signature_version = json_form.get('signature_version')
 
     web3 = get_web3()
 
     with db.engine_rdwr.connect() as connection:
-        jwt_token = generate_jwt_token(connection, web3, address, signature, sign_message_id)
+        jwt_token = generate_jwt_token(
+            connection,
+            web3, address, signature,
+            signature_version=signature_version,
+            sign_message=sign_message   # only for unregistered user
+        )
 
         if jwt_token:
             return helper.response_ok({
