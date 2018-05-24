@@ -15,6 +15,7 @@ eth-keys==0.2.0b3
 eth-rlp==0.1.2
 eth-utils==1.0.3
 Flask==1.0.2
+Flask-Cors==3.0.4
 hexbytes==0.1.0
 idna==2.6
 ipfsapi==0.4.2.post1
@@ -28,6 +29,7 @@ pycryptodome==3.6.1
 PyJWT==1.6.1
 PyMySQL==0.8.1
 python-dateutil==2.7.3
+redis==2.10.6
 requests==2.18.4
 rlp==1.0.1
 s3transfer==0.1.13
