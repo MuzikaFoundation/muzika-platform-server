@@ -98,10 +98,7 @@ def _login():
         )
 
         if jwt_token:
-            return helper.response_ok({
-                'address': address,
-                'token': jwt_token
-            })
+            return helper.response_ok(jwt_token)
         else:
             return helper.response_err(ER.AUTHENTICATION_FAILED, ER.AUTHENTICATION_FAILED_MSG)
 
