@@ -69,37 +69,27 @@ def register_sign_message_by_address(connection, address, message=None):
     return message_id, message
 
 
-def get_message_for_user(user_id, cache=None):
+def get_message_for_user(address, cache=None):
     """
     Return a random sign message for the user.
 
     If it has in the database with not expired, return it and
     if not, it generates a new random sign message for the user.
     """
-    import datetime
-    import arrow
-    from config import WebServerConfig, SignMessageConfig
+    from config import SignMessageConfig
     from modules.cache import MuzikaCache
 
     cache = cache or MuzikaCache()
-    msg_url = '/db/sign-message/{}'.format(user_id)
+    msg_url = '/db/sign-message/{}'.format(address)
     user_message_info = cache().get(msg_url)
-    current_time = arrow.now(WebServerConfig.timezone).datetime
-
-    # if expired message, ignore the message
-    if user_message_info and user_message_info['expired_at'] < current_time:
-        user_message_info = None
 
     if user_message_info is None:
         # if message is not in cache, make a new message
-        timeout = SignMessageConfig.unsigned_message_expired_time
-        expired_time = current_time + datetime.timedelta(seconds=timeout)
         message = generate_random_sign_message()
 
         # generate message
         cache().set(msg_url, {
-            'sign_message': message,
-            'expired_at': expired_time
+            'sign_message': message
         }, timeout=SignMessageConfig.unsigned_message_expired_time)
 
         # return generated message
