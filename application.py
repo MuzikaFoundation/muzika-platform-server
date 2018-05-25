@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 from config import WebServerConfig
 from controllers import (
-    artist, user, file, community
+    artist, user, file, board
 )
 from modules.json_encoder import FlaskJSONEncoder
 
@@ -19,7 +19,7 @@ blueprints = [
     artist.blueprint,
     user.blueprint,
     file.blueprint,
-    community.blueprint,
+    board.blueprint,
 ]
 
 production_blueprints = [
