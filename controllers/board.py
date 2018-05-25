@@ -18,16 +18,15 @@ BOARD_TYPE_LIST = (
 )
 
 
-@blueprint.route('/board', methods=['POST'])
+@blueprint.route('/board/<board_type>', methods=['POST'])
 @jwt_check
-def _post_to_community():
+def _post_to_community(board_type):
     """
     Uploads a post to the community.
     """
     json_form = request.get_json(force=True, silent=True)
     title = json_form.get('title')
     content = json_form.get('content')
-    board_type = json_form.get('type')
 
     user_id = request.user['user_id']
 
@@ -74,10 +73,8 @@ def _post_to_community():
         return helper.response_ok({'status': 'success'})
 
 
-@blueprint.route('/community/<int:post_id>', methods=['GET'])
-def _get_community_post(post_id):
-    board_type = request.args.get('type')
-
+@blueprint.route('/board/<board_type>/<int:post_id>', methods=['GET'])
+def _get_community_post(board_type, post_id):
     community_post_query_str = """
         SELECT * FROM `{}_board`
         WHERE `post_id` = :post_id
@@ -98,16 +95,15 @@ def _get_community_post(post_id):
         return helper.response_ok(db.to_relation_model(post))
 
 
-@blueprint.route('/community/<int:post_id>', methods=['PUT'])
+@blueprint.route('/board/<board_type>/<int:post_id>', methods=['PUT'])
 @jwt_check
-def _modify_post(post_id):
+def _modify_post(board_type, post_id):
     """
     Modify a post that the user has.
     """
     json_form = request.get_json(force=True, silent=True)
     title = json_form.get('title')
     content = json_form.get('content')
-    board_type = json_form.get('type')
 
     user_id = request.user['user_id']
 
@@ -163,14 +159,13 @@ def _modify_post(post_id):
         return helper.response_ok({'status': 'success'})
 
 
-@blueprint.route('/community/<int:post_id>', methods=['DELETE'])
+@blueprint.route('/board/<board_type>/<int:post_id>', methods=['DELETE'])
 @jwt_check
-def _delete_post(post_id):
+def _delete_post(board_type, post_id):
     """
     Delete a post that user has.
     """
     user_id = request.user['user_id']
-    board_type = request.args.get('type')
 
     # if unknown board type,
     if board_type not in BOARD_TYPE_LIST:
