@@ -35,7 +35,7 @@ engine_rdonly = create_engine(rdonly_db_url, encoding='utf-8', pool_recycle=290)
 engine_rdwr = create_engine(rdwr_db_url, encoding='utf-8', pool_recycle=290)
 
 
-def to_relation_model(row: RowProxy):
+def to_relation_model(row):
     """
     Returns a dict that represents a row in database. Since a row can be related with other table, it can be
     represented like
@@ -77,7 +77,7 @@ def to_relation_model(row: RowProxy):
     current = None
 
     if isinstance(row, RowProxy):
-        columns = list(zip(row.keys(), row))
+        row = list(zip(row.keys(), row))
     elif row is None:
         return None
 
