@@ -27,7 +27,9 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     :param connection: database connection.
     :param web3: web3(ethereum) instance.
     :param address: the wallet address of the user.
+    :param signature_version: signature creation type (Trezur, Metamask signature creation type)
     :param signature: message signed by user's wallet.
+    :param default_user_name: if not-None-type-value and user_id not exists at the address, this function creates user
     :return: return JWT token if authenticated and generated, nor None if not authenticated.
     """
     import arrow
@@ -42,6 +44,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     # if first sign in, get message not by sign message id since database doesn't have it
     signature_version = kwargs.get('signature_version')
     sign_message = kwargs.get('sign_message')
+    default_user_name = kwargs.get('default_user_name', None)
 
     # allocate later if cache is used
     cache = None
@@ -113,7 +116,10 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
 
     # if user(wallet) is not registered yet, register it with empty name
     if not user_id:
-        user_id = connection.execute(text(user_insert_query_str), address=address, user_name='').lastrowid
+        if default_user_name is not None:
+            user_id = connection.execute(text(user_insert_query_str), address=address, user_name=default_user_name).lastrowid
+        else:
+            return None
 
     # create a new sign message
     sign_message_id, _ = register_sign_message_by_id(connection, user_id, sign_message)

@@ -19,23 +19,30 @@ def _get_user(address):
 
     If user(address) does not exist, give a random message for signing
     """
-    user_query_str = "SELECT * FROM `users` WHERE `address` = :address"
 
     # if invalid address format, don't generate message
     if not check_address_format(address):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    with db.engine_rdwr.connect() as connection:
+    with db.engine_rdonly.connect() as connection:
+        user_query_str = "SELECT * FROM `users` WHERE `address` = :address LIMIT 1"
         user = connection.execute(text(user_query_str), address=address).fetchone()
+        return helper.response_ok(db.to_relation_model(user))
 
-        if user is None:
-            return helper.response_ok({'message': generate_random_sign_message()})
-        else:
-            user = dict(user)
-            message = get_message_for_user(user['user_id'])
-            user.update({'message': message})
 
-        return helper.response_ok(user)
+@blueprint.route('/user/<address>/sign-message', methods=['GET'])
+def _get_user_sign_message(address):
+    """
+    Returns an user information by wallet address.
+
+    If user(address) does not exist, give a random message for signing
+    """
+
+    # if invalid address format, don't generate message
+    if not check_address_format(address):
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    return helper.response_ok(get_message_for_user(address))
 
 
 @blueprint.route('/user', methods=['PUT'])
@@ -65,6 +72,7 @@ def _modify_user():
             return helper.response_err(ER.ALREADY_EXIST, ER.ALREADY_EXIST_MSG)
 
 
+@blueprint.route('/register', methods=['POST'])
 @blueprint.route('/login', methods=['POST'])
 def _login():
     from modules.login import generate_jwt_token
@@ -76,6 +84,8 @@ def _login():
     sign_message = json_form.get('message')     # only for unregistered user
     signature_version = json_form.get('signature_version')
 
+    user_name = json_form.get('user_name')
+
     web3 = get_web3()
 
     with db.engine_rdwr.connect() as connection:
@@ -83,7 +93,8 @@ def _login():
             connection,
             web3, address, signature,
             signature_version=signature_version,
-            sign_message=sign_message   # only for unregistered user
+            sign_message=sign_message,   # only for unregistered user
+            default_user_name=user_name
         )
 
         if jwt_token:
