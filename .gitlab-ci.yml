@@ -3,18 +3,6 @@ image: mapiacompany/muzika-platform-server:latest
 stages:
   - deploy
 
-deploy:master:elb:
-  stage: deploy
-  variables:
-    ZIP_FILE: "dist.zip"
-    GIT_SUBMODULE_STRATEGY: recursive
-  script:
-    - cd ./muzika-contract && npm install && npm run contract:compile && cd ..
-    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
-    - sh ./deploy/elb-deploy.sh master > /dev/null 2> /dev/null
-  only:
-    - master
-
 deploy:develop:
   stage: deploy
   variables:
