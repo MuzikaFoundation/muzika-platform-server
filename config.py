@@ -59,7 +59,7 @@ class CacheConfig:
     """
     Global constants for redis
     """
-    cache_type = 'redis' if os.environ.get('ENV') == 'production' else 'local'
+    cache_type = 'redis' if os.environ.get('ENV') in ['production', 'stage'] else 'local'
     host = 'localhost'
     port = 6379         # ignored if local cache
     key_prefix = 'muzika-redis-cache'

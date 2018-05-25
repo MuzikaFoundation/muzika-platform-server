@@ -181,7 +181,10 @@ def jwt_check(func):
         token = token.split(' ')[-1] if token is not None else None
 
         # decode token
-        decoded_token = jwt.decode(token, JWT_SECRET_KEY, verify=True, audience=WebServerConfig.issuer)
+        try:
+            decoded_token = jwt.decode(token, JWT_SECRET_KEY, verify=True, audience=WebServerConfig.issuer)
+        except jwt.exceptions.InvalidSignatureError:
+            return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
         address, sign_message_id = decoded_token['jti'].split('-')
 
         # get sign message for calculating hash
@@ -202,7 +205,8 @@ def jwt_check(func):
         decoded_hash = decoded_token['hash']
 
         # calculate hash from database
-        real_hash = hashlib.md5("{}-{}-{}-{}".format(user_id, sign_message_id, sign_user_address, private_key))
+        real_hash = hashlib.md5("{}-{}-{}-{}".format(user_id, sign_message_id, sign_user_address, private_key)
+                                .encode('utf-8')).hexdigest()
 
         # if decoded hash is not equal to calculated hash from database, it's invalid token
         if decoded_hash != real_hash:
