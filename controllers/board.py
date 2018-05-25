@@ -7,6 +7,7 @@ from modules import sql
 from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
+from modules.youtube import parse_youtube_id
 
 blueprint = Blueprint('board', __name__, url_prefix='/api')
 
@@ -42,7 +43,7 @@ def _post_to_community():
     elif board_type == 'video':
         # video needs additional columns (youtube video id and genre)
         genre = json_form.get('genre')
-        youtube_video_id = json_form.get('youtube_video_id')
+        youtube_video_id = parse_youtube_id(json_form.get('youtube_url'))
 
         # if parameter is invalid or does not exist
         if not isinstance(genre, str) or not isinstance(youtube_video_id, str):
@@ -124,7 +125,7 @@ def _modify_post(post_id):
     elif board_type == 'video':
         # video needs additional columns (youtube video id and genre)
         genre = json_form.get('genre')
-        youtube_video_id = json_form.get('youtube_video_id')
+        youtube_video_id = parse_youtube_id(json_form.get('youtube_url'))
 
         if not isinstance(genre, str) or not isinstance(youtube_video_id, str):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
