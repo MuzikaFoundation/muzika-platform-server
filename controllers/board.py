@@ -10,11 +10,10 @@ from modules.response import helper
 
 blueprint = Blueprint('board', __name__, url_prefix='/api')
 
-# TODO: add music sheet board
 BOARD_TYPE_LIST = (
     'community',
     'video',
-    # 'sheet',
+    'sheet',
 )
 
 
@@ -50,6 +49,14 @@ def _post_to_community():
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
         columns(genre=genre, youtube_video_id=youtube_video_id)
+    elif board_type == 'sheet':
+        # sheet needs additional columns for file
+        file_id = json_form.get('file_id')
+
+        # if parameter is invalid or does not exist
+        if not isinstance(file_id, int):
+            return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+        columns(file_id=file_id)
     else:
         # if wrong type, response with invalid request message
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
@@ -123,6 +130,14 @@ def _modify_post(post_id):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
         set_columns(youtube_video_id=youtube_video_id, genre=genre)
+    elif board_type == 'sheet':
+        # sheet needs additional columns for file
+        file_id = json_form.get('file_id')
+
+        if not isinstance(file_id, int):
+            return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+        set_columns(file_id=file_id)
     else:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
