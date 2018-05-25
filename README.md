@@ -55,5 +55,5 @@ Compile solidity codes for generating contracts. The
 ```
 $ cd muzika-contract
 $ npm install
-$ truffle migrate
+$ truffle compile
 ```
