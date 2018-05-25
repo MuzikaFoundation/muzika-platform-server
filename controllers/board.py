@@ -3,7 +3,6 @@ from flask import Blueprint, request
 from sqlalchemy import text
 
 from modules import database as db
-from modules import sql
 from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
@@ -34,7 +33,7 @@ def _post_to_community(board_type):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     # define columns that all boards have
-    columns = sql.Columns(user_id=user_id, title=title, content=content)
+    statement = db.Statement('{}_board'.format(board_type)).set(user_id=user_id, title=title, content=content)
 
     if board_type == 'community':
         # community needs no additional columns
@@ -48,7 +47,7 @@ def _post_to_community(board_type):
         if not isinstance(genre, str) or not isinstance(youtube_video_id, str):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-        columns(genre=genre, youtube_video_id=youtube_video_id)
+        statement.set(genre=genre, youtube_video_id=youtube_video_id)
     elif board_type == 'sheet':
         # sheet needs additional columns for file
         file_id = json_form.get('file_id')
@@ -56,20 +55,13 @@ def _post_to_community(board_type):
         # if parameter is invalid or does not exist
         if not isinstance(file_id, int):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
-        columns(file_id=file_id)
+        statement.set(file_id=file_id)
     else:
         # if wrong type, response with invalid request message
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    # construct a query
-    upload_query_str = """
-        INSERT INTO `{board_type}_board`
-        SET 
-          {columns_set_statement}
-    """.format(board_type=board_type, columns_set_statement=columns.set_statement)
-
     with db.engine_rdwr.connect() as connection:
-        connection.execute(text(upload_query_str), **columns.fetch_params)
+        connection.execute(text(statement.insert()), **statement.fetch_params)
         return helper.response_ok({'status': 'success'})
 
 
@@ -112,8 +104,9 @@ def _modify_post(board_type, post_id):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     # construct a default column that all boards have
-    set_columns = sql.Columns(title=title, content=content)
-    where_columns = sql.Columns(post_id=post_id, user_id=user_id)
+    statement = db.Statement('{}_board'.format(board_type))\
+        .set(title=title, content=content)\
+        .where(post_id=post_id, user_id=user_id)
 
     if board_type == 'community':
         # community needs no additional columns
@@ -126,7 +119,7 @@ def _modify_post(board_type, post_id):
         if not isinstance(genre, str) or not isinstance(youtube_video_id, str):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-        set_columns(youtube_video_id=youtube_video_id, genre=genre)
+        statement.set(youtube_video_id=youtube_video_id, genre=genre)
     elif board_type == 'sheet':
         # sheet needs additional columns for file
         file_id = json_form.get('file_id')
@@ -134,23 +127,12 @@ def _modify_post(board_type, post_id):
         if not isinstance(file_id, int):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-        set_columns(file_id=file_id)
+        statement.set(file_id=file_id)
     else:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    post_modify_query_str = """
-        UPDATE `{board_type}_board`
-        SET
-          {set_statement}
-          {where_statement}
-    """.format(board_type=board_type,
-               set_statement=set_columns.set_statement,
-               where_statement=where_columns.where_statement)
-
     with db.engine_rdwr.connect() as connection:
-        modified = connection.execute(text(post_modify_query_str),
-                                      **set_columns.fetch_params,
-                                      **where_columns.fetch_params).rowcount
+        modified = connection.execute(text(statement.update()), **statement.fetch_params).rowcount
 
         # if the post does not exist or is not the user's post
         if not modified:
@@ -171,20 +153,12 @@ def _delete_post(board_type, post_id):
     if board_type not in BOARD_TYPE_LIST:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    delete_query_str = """
-        UPDATE `{board_type}_board`
-        SET
-          `status` = :post_status
-        WHERE
-          `post_id` = :post_id AND
-          `user_id` = :user_id
-    """.format(board_type=board_type)
+    statement = db.Statement('{}_board'.format(board_type))\
+        .set(status='deleted')\
+        .where(post_id=post_id, user_id=user_id)
 
     with db.engine_rdwr.connect() as connection:
-        deleted = connection.execute(text(delete_query_str),
-                                     post_status='deleted',
-                                     post_id=post_id,
-                                     user_id=user_id).rowcount
+        deleted = connection.execute(text(statement.update()), statement.fetch_params).rowcount
 
         # if the post does not exist or is not the user's post
         if not deleted:

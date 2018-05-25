@@ -105,36 +105,102 @@ def to_relation_model_list(rows: ResultProxy):
     return [to_relation_model(r) for r in rows]
 
 
-def delete_sql(table_name, data_dict, connect):
-    qry_delete = "DELETE FROM {} WHERE ".format(table_name)
-    query_list = []
-    for key, val in data_dict.items():
-        query_list.append("{} = :{}".format(key, key))
-    qry_delete = qry_delete + ' AND '.join(query_list)
+class Statement(object):
+    """
+    This class instance constructs a SQL statement.
 
-    return connect.execute(text(qry_delete), data_dict)
+    Ex.
+    >>> Statement('users').where(user_id=3).select()
+    SELECT * FROM `users` WHERE `user_id` = :user_id
 
+    >>> Statement('users').columns('user_id', 'name').where(user_id=3).select()
+    SELECT name FROM `users` WHERE `user_id` = :user_id
 
-def insert_sql(table_name, data_dict, connect):
-    qry_insert = "INSERT INTO {} SET ".format(table_name)
-    query_list = []
-    for key, val in data_dict.items():
-        query_list.append("{} = :{}".format(key, key))
-    qry_insert = qry_insert + ', '.join(query_list)
+    >>> s = Statement('users').set(name='test', test=123).where(user_id=3).update()
+    UPDATE `users` SET name = :name, test = :test WHERE user_id = :user_id
 
-    return connect.execute(text(qry_insert), data_dict)
+    >>> s.fetch_params
+    {'name': 'test', 'test': 123, 'user_id': 3}
 
+    # TODO : conflict if the same key exists in set and where columns
+    Never use the same column in set and where columns like at present.
+    >>> Statement('users').set(user_id=4).where(user_id=3).update()
+    """
+    def __init__(self, table_name):
+        self.table_name = table_name
+        self.select_columns = []
+        self.set_columns = {}
+        self.where_columns = {}
 
-def update_sql(table_name, where_dict, data_dict, connect):
-    update_query_str = "UPDATE `{}` SET ".format(table_name)
-    query_list = []
-    for key, val in data_dict.items():
-        query_list.append(" {} = :{} ".format(key, key))
-    update_query_str = update_query_str + ', '.join(query_list)
+    def columns(self, *args):
+        self.select_columns.extend(args)
+        return self
 
-    where_str_arr = []
-    for key, val in where_dict.items():
-        where_str_arr.append("`{}` = :{}".format(key, key))
-    update_query_str = update_query_str + ' WHERE ' + ' AND '.join(where_str_arr)
+    def set(self, **kwargs):
+        self.set_columns.update(kwargs)
+        return self
 
-    return connect.execute(text(update_query_str), data_dict)
+    def where(self, **kwargs):
+        self.where_columns.update(kwargs)
+        return self
+
+    def select(self):
+        return """
+            SELECT {select_columns}
+            FROM `{table_name}`
+            {where_statement}
+        """.format(
+            select_columns=self._select_column_part(*self.select_columns) if self.select_columns else '*',
+            table_name=self.table_name,
+            where_statement=self._where_part(**self.where_columns)
+        )
+
+    def insert(self):
+        return """
+            INSERT INTO `{table_name}`
+            SET
+              {set_statement}
+        """.format(table_name=self.table_name, set_statement=self._set_part(**self.set_columns))
+
+    def update(self):
+        return """
+            UPDATE `{table_name}`
+            SET
+              {set_statement}
+            {where_statement}
+        """.format(
+            table_name=self.table_name,
+            set_statement=self._set_part(**self.set_columns),
+            where_statement=self._where_part(**self.where_columns)
+        )
+
+    def delete(self):
+        return """
+            DELETE FROM `{table_name}`
+            {where_statement}
+        """.format(
+            table_name=self.table_name,
+            where_statement=self._where_part(**self.where_columns)
+        )
+
+    @property
+    def fetch_params(self):
+        params = {}
+        params.update(self.set_columns)
+        params.update(self.where_columns)
+        return params
+
+    @staticmethod
+    def _select_column_part(*args):
+        return ', '.join(args)
+
+    @staticmethod
+    def _set_part(**kwargs):
+        return ', '.join(['{} = :{}'.format(column, column) for column in kwargs])
+
+    @staticmethod
+    def _where_part(**kwargs):
+        if len(kwargs) == 0:
+            return ''
+        else:
+            return ''.join(['WHERE ', ' AND '.join(['{} = :{}'.format(column, column) for column in kwargs])])
