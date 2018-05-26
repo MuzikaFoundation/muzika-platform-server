@@ -12,6 +12,12 @@ from modules.ethereum_address import check_address_format
 blueprint = Blueprint('user', __name__, url_prefix='/api')
 
 
+@blueprint.route('/me', methods=['GET'])
+@jwt_check
+def _get_me():
+    return helper.response_ok(request.user)
+
+
 @blueprint.route('/user/<address>', methods=['GET'])
 def _get_user(address):
     """
