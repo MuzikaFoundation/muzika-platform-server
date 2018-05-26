@@ -10,12 +10,6 @@ from modules.youtube import parse_youtube_id
 
 blueprint = Blueprint('board', __name__, url_prefix='/api')
 
-BOARD_TYPE_LIST = (
-    'community',
-    'video',
-    'sheet',
-)
-
 
 @blueprint.route('/board/<board_type>', methods=['POST'])
 @jwt_check
@@ -33,7 +27,13 @@ def _post_to_community(board_type):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     # define columns that all boards have
-    statement = db.Statement('{}_board'.format(board_type)).set(user_id=user_id, title=title, content=content)
+    table_name = db.table.board(board_type)
+
+    # if unknown board type
+    if not table_name:
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    statement = db.Statement(table_name).set(user_id=user_id, title=title, content=content)
 
     if board_type == 'community':
         # community needs no additional columns
@@ -56,29 +56,24 @@ def _post_to_community(board_type):
         if not isinstance(file_id, int):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
         statement.set(file_id=file_id)
-    else:
-        # if wrong type, response with invalid request message
-        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     with db.engine_rdwr.connect() as connection:
-        connection.execute(text(statement.insert()), **statement.fetch_params)
-        return helper.response_ok({'status': 'success'})
+        post_id = statement.insert(connection).lastrowid
+        return helper.response_ok({'post_id': post_id})
 
 
 @blueprint.route('/board/<board_type>/<int:post_id>', methods=['GET'])
 def _get_community_post(board_type, post_id):
-    community_post_query_str = """
-        SELECT * FROM `{}_board`
-        WHERE `post_id` = :post_id
-        LIMIT 1
-    """
+    table_name = db.table.board(board_type)
 
-    # if unknown board type,
-    if board_type not in BOARD_TYPE_LIST:
+    # if unknown board type
+    if not table_name:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
+    statement = db.Statement(table_name).where(post_id=post_id, status='posted')
+
     with db.engine_rdonly.connect() as connection:
-        post = connection.execute(text(community_post_query_str), post_id=post_id).fetchone()
+        post = statement.select(connection).fetchone()
 
         # if the post does not exist,
         if post is None:
@@ -103,10 +98,16 @@ def _modify_post(board_type, post_id):
     if not isinstance(title, str) or not isinstance(content, str):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
+    table_name = db.table.board(board_type)
+
+    # if unknown board type
+    if not table_name:
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
     # construct a default column that all boards have
-    statement = db.Statement('{}_board'.format(board_type))\
+    statement = db.Statement(table_name)\
         .set(title=title, content=content)\
-        .where(post_id=post_id, user_id=user_id)
+        .where(post_id=post_id, user_id=user_id, status='posted')
 
     if board_type == 'community':
         # community needs no additional columns
@@ -128,11 +129,9 @@ def _modify_post(board_type, post_id):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
         statement.set(file_id=file_id)
-    else:
-        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     with db.engine_rdwr.connect() as connection:
-        modified = connection.execute(text(statement.update()), **statement.fetch_params).rowcount
+        modified = statement.update(connection).rowcount
 
         # if the post does not exist or is not the user's post
         if not modified:
@@ -149,16 +148,18 @@ def _delete_post(board_type, post_id):
     """
     user_id = request.user['user_id']
 
-    # if unknown board type,
-    if board_type not in BOARD_TYPE_LIST:
+    table_name = db.table.board(board_type)
+
+    # if unknown board type
+    if not table_name:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    statement = db.Statement('{}_board'.format(board_type))\
+    statement = db.Statement(table_name)\
         .set(status='deleted')\
-        .where(post_id=post_id, user_id=user_id)
+        .where(post_id=post_id, user_id=user_id, status='posted')
 
     with db.engine_rdwr.connect() as connection:
-        deleted = connection.execute(text(statement.update()), statement.fetch_params).rowcount
+        deleted = statement.update(connection).rowcount
 
         # if the post does not exist or is not the user's post
         if not deleted:
