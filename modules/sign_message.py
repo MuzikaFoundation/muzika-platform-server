@@ -4,6 +4,7 @@
 """
 
 from sqlalchemy import text
+from modules import database as db
 
 __all__ = [
     'generate_random_sign_message',
@@ -46,27 +47,17 @@ def validate_message(message):
 
 
 def register_sign_message_by_id(connection, user_id, message=None):
-    insert_message_sql_str = """
-        INSERT INTO `sign_messages`
-        SET
-          `user_id` = :user_id,
-          `message` = :message
-    """
     message = message or generate_random_sign_message()
-    message_id = connection.execute(text(insert_message_sql_str), user_id=user_id, message=message).lastrowid
+    message_id = db.statement(db.table.SIGN_MESSAGES).set(user_id=user_id, message=message).insert(connection).lastrowid
     return message_id, message
 
 
 def register_sign_message_by_address(connection, address, message=None):
-    insert_message_sql_str = """
-        INSERT INTO `sign_messages`
-        SET 
-          `user_id` = (SELECT `user_id` FROM `users` WHERE `address` = :address),
-          `message` = :message
-    """
-    message = message or generate_random_sign_message()
-    message_id = connection.execute(text(insert_message_sql_str), address=address, message=message).lastrowid
-    return message_id, message
+    user_row = db.statement(db.table.SIGN_MESSAGES).columns('user_id').where(address=address).fetchone()
+    if user_row is not None:
+        return register_sign_message_by_id(connection, user_row['user_id'], message)
+    else:
+        return None, None
 
 
 def get_message_for_user(address, cache=None):

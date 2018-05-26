@@ -1,4 +1,3 @@
-
 """
  Login process functions in Muzika-Backend
 
@@ -13,6 +12,7 @@ import jwt
 from sqlalchemy import text
 
 from config import WebServerConfig
+from modules import database as db
 from modules.secret import load_secret_json
 
 jwt_json = load_secret_json('jwt')
@@ -49,24 +49,6 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     # allocate later if cache is used
     cache = None
 
-    user_id_query_str = """
-        SELECT * FROM `users`
-        WHERE `address` = :address
-    """
-
-    user_insert_query_str = """
-        INSERT INTO `users`
-        SET
-          `address` = :address,
-          `name` = :user_name
-    """
-
-    sign_update_query_str = """
-        UPDATE `sign_messages`
-        SET `user_id` = :user_id, `private_key` = :private_key
-        WHERE `message_id` = :message_id
-    """
-
     try:
         """
         Get sign message and its private key. The private key is used for the hash value in JWT token.
@@ -76,7 +58,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         """
 
         # get user id by address
-        user_id_query = connection.execute(text(user_id_query_str), address=address).fetchone()
+        user_id_query = db.statement(db.table.USERS).where(address=address).select(connection).fetchone()
         if user_id_query:
             user_id = user_id_query['user_id']
         else:
@@ -117,7 +99,8 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     # if user(wallet) is not registered yet, register it with empty name
     if not user_id:
         if default_user_name is not None:
-            user_id = connection.execute(text(user_insert_query_str), address=address, user_name=default_user_name).lastrowid
+            user_id = db.statement(db.table.USERS).set(address=address,
+                                                       user_name=default_user_name).insert(connection).lastrowid
         else:
             return None
 
@@ -125,8 +108,10 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     sign_message_id, _ = register_sign_message_by_id(connection, user_id, sign_message)
 
     # after checking validation, authenticated, so update sign message
-    connection.execute(text(sign_update_query_str),
-                       user_id=user_id, private_key=private_key, message_id=sign_message_id)
+    db.statement(db.table.SIGN_MESSAGES) \
+        .set(user_id=user_id,
+             private_key=private_key) \
+        .where(message_id=sign_message_id).update(connection)
 
     # JWT payload
     payload = {

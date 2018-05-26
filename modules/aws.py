@@ -13,6 +13,7 @@
 import boto3
 from sqlalchemy import text
 
+from modules import database as db
 from modules.secret import load_secret_json
 
 aws_config = load_secret_json('aws')
@@ -73,33 +74,19 @@ class MuzikaS3Bucket(object):
         if directory:
             object_key = ''.join([directory, '/', object_key])
 
-        put_query_str = """
-            INSERT INTO `files`
-            SET
-              `user_id` = :user_id,
-              `type` = :file_type,
-              `s3_bucket` = :s3_bucket,
-              `object_key` = :object_key,
-              `file_name` = :file_name,
-              `file_size` = :file_size,
-              `hash` = :file_hash,
-              `expired_at` = :expired_at
-        """
-
-        s3 = session.client('s3')
-
         # insert the file information into the db
-        connection.execute(
-            text(put_query_str),
+        db.statement(db.table.FILES).set(
             user_id=user_id,
-            file_type=file_type,
+            type=file_type,
             s3_bucket=bucket,
             object_key=object_key,
             file_name=name,
             file_size=file_len,
-            file_hash=file_hash,
+            hsah=file_hash,
             expired_at=expired_at
-        )
+        ).insert(connection)
+
+        s3 = session.client('s3')
 
         # upload to the S3 bucket
         s3.put_object(
