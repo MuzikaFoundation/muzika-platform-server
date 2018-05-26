@@ -16,11 +16,13 @@ from sqlalchemy.engine import RowProxy, ResultProxy
 from sqlalchemy.engine.url import URL
 
 from modules.db_orm.statement import Statement
-from modules.db_orm.table import Table
+from modules.db_orm.table import Table, BOARD_TYPE_LIST
 from modules.secret import load_secret_json
 
 __all__ = [
-    'engine_rdonly', 'engine_rdwr'
+    'engine_rdonly', 'engine_rdwr',
+    'to_relation_model', 'to_relation_model_list',
+    'statement', 'table'
 ]
 
 db_secret = load_secret_json('database')
@@ -108,3 +110,4 @@ def to_relation_model_list(rows: ResultProxy):
 
 statement = Statement
 table = Table
+table.BOARD_TYPE_LIST = BOARD_TYPE_LIST
