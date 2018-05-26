@@ -76,14 +76,14 @@ def _post_board_comment(board_type, post_id):
         content=content
     )
 
-    with db.engine_rdwr.begin() as connection:
+    with db.engine_rdwr.connect() as connection:
         try:
-            statement.insert(connection)
+            comment_id = statement.insert(connection).lastrowid
         except IntegrityError:
             # if failed to insert
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-        return helper.response_ok({'status': 'success'})
+        return helper.response_ok({'comment_id': comment_id})
 
 
 @blueprint.route('/board/<board_type>/comment/<int:comment_id>', methods=['GET'])
@@ -148,14 +148,14 @@ def _post_board_subcomment(board_type, parent_comment_id):
 
     with db.engine_rdwr.begin() as connection:
         try:
-            statement.insert(connection)
+            comment_id = statement.insert(connection).lastrowid
         except IntegrityError:
             # if failed to insert
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
         connection.execute(text(parent_update_statement), parent_comment_id=parent_comment_id)
 
-        return helper.response_ok({'status': 'success'})
+        return helper.response_ok({'comment_id': comment_id})
 
 
 @blueprint.route('/board/<board_type>/comment/<int:comment_id>', methods=['PUT'])
