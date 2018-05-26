@@ -11,6 +11,37 @@ from modules.youtube import parse_youtube_id
 blueprint = Blueprint('board', __name__, url_prefix='/api')
 
 
+@blueprint.route('/board/<board_type>', methods=['GET'])
+def _get_board_posts(board_type):
+    table_name = db.table.board(board_type)
+    page = request.args.get('page', 1)
+
+    # if unknown board type
+    if not table_name:
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    from modules.pagination import Pagination
+
+    fetch_query_str = """
+        SELECT `b`.*, '!user', `u`.* 
+        FROM `{}` `b` 
+        INNER JOIN `users` `u` 
+          ON (`u`.`user_id` = `b`.`user_id`)
+    """.format(table_name)
+
+    count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}`".format(table_name)
+    order_query_str = "ORDER BY `post_id` DESC"
+
+    with db.engine_rdonly.connect() as connection:
+        return helper.response_ok(Pagination(
+            connection=connection,
+            fetch=fetch_query_str,
+            count=count_query_str,
+            order=order_query_str,
+            current_page=page
+        ).get_result(db.to_relation_model))
+
+
 @blueprint.route('/board/<board_type>', methods=['POST'])
 @jwt_check
 def _post_to_community(board_type):
