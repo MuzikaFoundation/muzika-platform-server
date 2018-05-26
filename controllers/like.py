@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from modules import database as db
@@ -8,6 +7,38 @@ from modules.response import helper
 from modules.response import error_constants as ER
 
 blueprint = Blueprint('like', __name__, url_prefix='/api')
+
+
+@blueprint.route('/user/<user_id>/board/<board_type>/likes', methods=['GET'])
+def _get_board_likes(user_id, board_type):
+    """
+    Gets an user's board likes list
+    """
+    table_name = db.table.like(board_type)
+
+    if not table_name:
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    with db.engine_rdonly.connect() as connection:
+        board_like_statement = db.Statement(table_name).where(user_id=user_id)
+
+        return helper.response_ok(db.to_relation_model_list(board_like_statement.select(connection)))
+
+
+@blueprint.route('/user/<user_id>/board/<board_type>/comment/likes', methods=['GET'])
+def _get_comments_likes(user_id, board_type):
+    """
+    Gets an user's comment likes list
+    """
+    table_name = db.table.comment_like(board_type)
+
+    if not table_name:
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    with db.engine_rdonly.connect() as connection:
+        comment_like_statement = db.Statement(table_name).where(user_id=user_id)
+
+        return helper.response_ok(db.to_relation_model_list(comment_like_statement.select(connection)))
 
 
 @blueprint.route('/board/<board_type>/<int:post_id>/like', methods=['POST'])
