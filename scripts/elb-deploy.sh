@@ -8,10 +8,10 @@ aws s3 cp "$ZIP_FILE" "s3://$S3_BUCKET/$S3_OBJECT_KEY"
 
 BRANCH=${CI_COMMIT_REF_NAME}
 
-if [ "$1" = "master" ]
+if [ "$BRANCH" = "master" ]
 then
     export EB_APP_ENV=$EB_APP_ENV_MASTER
-elif [ "$1" = "develop" ]
+elif [ "$BRANCH" = "develop" ]
 then
     export EB_APP_ENV=$EB_APP_ENV_DEVELOP
 fi
