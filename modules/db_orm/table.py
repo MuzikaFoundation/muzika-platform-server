@@ -22,3 +22,10 @@ class Table:
             return None
         else:
             return '{}_comments'.format(board_type)
+
+    @staticmethod
+    def tags(board_type):
+        if board_type not in BOARD_TYPE_LIST:
+            return None
+        else:
+            return '{}_tags'.format(board_type)
