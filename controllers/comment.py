@@ -57,12 +57,11 @@ def _get_board_post_comments(board_type, post_id):
 @jwt_check
 def _post_board_comment(board_type, post_id):
     json_form = request.get_json(force=True, silent=True)
-    parent_comment_id = json_form.get('parent_comment_id')
     content = json_form.get('content')
 
     user_id = request.user['user_id']
 
-    if not isinstance(content, str) or not isinstance(parent_comment_id, (int, type(None))):
+    if not isinstance(content, str):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     table_name = db.table.comment(board_type)
@@ -74,16 +73,16 @@ def _post_board_comment(board_type, post_id):
     statement = db.Statement(table_name).set(
         user_id=user_id,
         post_id=post_id,
-        parent_comment_id=parent_comment_id,
         content=content
     )
 
-    with db.engine_rdwr.connect() as connection:
+    with db.engine_rdwr.begin() as connection:
         try:
             statement.insert(connection)
         except IntegrityError:
             # if failed to insert
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
         return helper.response_ok({'status': 'success'})
 
 
@@ -117,6 +116,46 @@ def _get_board_comment(board_type, comment_id):
 
         comment.update({'subcomments': db.to_relation_model_list(subcomments)})
         return helper.response_ok(comment)
+
+
+@blueprint.route('/board/<board_type>/comment/<int:parent_comment_id>', methods=['POST'])
+@jwt_check
+def _post_board_subcomment(board_type, parent_comment_id):
+    json_form = request.get_json(force=True, silent=True)
+    content = json_form.get('content')
+
+    user_id = request.user['user_id']
+
+    if not isinstance(content, str) or not isinstance(parent_comment_id, int):
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    table_name = db.table.comment(board_type)
+
+    # if unknown board type
+    if not table_name:
+        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+    statement = db.Statement(table_name).set(user_id=user_id, parent_comment_id=parent_comment_id, content=content)
+
+    parent_update_statement = """
+        UPDATE `{}`
+        SET
+          `reply_count` = `reply_count` + 1
+        WHERE
+          `comment_id` = :parent_comment_id
+        LIMIT 1
+    """.format(table_name)
+
+    with db.engine_rdwr.begin() as connection:
+        try:
+            statement.insert(connection)
+        except IntegrityError:
+            # if failed to insert
+            return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+
+        connection.execute(text(parent_update_statement), parent_comment_id=parent_comment_id)
+
+        return helper.response_ok({'status': 'success'})
 
 
 @blueprint.route('/board/<board_type>/comment/<int:comment_id>', methods=['PUT'])
