@@ -41,7 +41,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     from modules.signature import validate_signature
     from modules.cache import MuzikaCache
 
-    # if first sign in, get message not by sign message id since database doesn't have it
+    # if first sign in, get message not by sign message id since db doesn't have it
     signature_version = kwargs.get('signature_version')
     sign_message = kwargs.get('sign_message')
     default_user_name = kwargs.get('default_user_name', None)
@@ -210,11 +210,11 @@ def jwt_check(func):
         # get hash from decoded JWT
         decoded_hash = decoded_token['hash']
 
-        # calculate hash from database
+        # calculate hash from db
         real_hash = hashlib.md5("{}-{}-{}-{}".format(user_id, sign_message_id, sign_user_address, private_key)
                                 .encode('utf-8')).hexdigest()
 
-        # if decoded hash is not equal to calculated hash from database, it's invalid token
+        # if decoded hash is not equal to calculated hash from db, it's invalid token
         if decoded_hash != real_hash:
             return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
 

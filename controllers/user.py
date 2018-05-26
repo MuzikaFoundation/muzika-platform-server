@@ -25,8 +25,7 @@ def _get_user(address):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     with db.engine_rdonly.connect() as connection:
-        user_query_str = "SELECT * FROM `users` WHERE `address` = :address LIMIT 1"
-        user = connection.execute(text(user_query_str), address=address).fetchone()
+        user = db.statement(db.table.USERS).where(address=address).select(connection).fetchone()
         return helper.response_ok(db.to_relation_model(user))
 
 
@@ -58,15 +57,13 @@ def _modify_user():
     if not isinstance(user_name, str):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    user_update_query_str = """
-        UPDATE `users`
-        SET
-          `name` = :user_name
-        WHERE `address` = :address
-    """
-
     with db.engine_rdwr.connect() as connection:
-        if connection.execute(text(user_update_query_str), user_name=user_name, address=address).row_count:
+        result = db.statement(db.table.USERS)\
+            .where(address=address)\
+            .set(name=user_name)\
+            .update(connection)
+
+        if result.row_count:
             return helper.response_ok({'status': 'success'})
         else:
             return helper.response_err(ER.ALREADY_EXIST, ER.ALREADY_EXIST_MSG)

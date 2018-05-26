@@ -88,7 +88,7 @@ class MuzikaS3Bucket(object):
 
         s3 = session.client('s3')
 
-        # insert the file information into the database
+        # insert the file information into the db
         connection.execute(
             text(put_query_str),
             user_id=user_id,
