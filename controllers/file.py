@@ -5,6 +5,7 @@ from modules.login import jwt_check
 from modules.response import helper
 from modules.response import error_constants as ER
 from modules import database as db
+from modules.ipfs import RelayIpfs
 
 blueprint = Blueprint('file', __name__, url_prefix='/api')
 
@@ -27,8 +28,9 @@ def _upload_file():
     file_name = file.filename
     file_data = file.stream.read()
 
-    # TODO: get IPFS hash value
-    file_hash = None
+    # get ipfs hash value
+    ipfs = RelayIpfs()
+    file_hash = ipfs.get_connection().add_bytes(file_data)
 
     bucket = MuzikaS3Bucket(file_type=file_type)
     with db.engine_rdwr.begin() as connection:
