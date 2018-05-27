@@ -12,6 +12,9 @@ class Statement(object):
     >>> Statement('users').columns('user_id', 'name').where(user_id=3).select()
     SELECT name FROM `users` WHERE `user_id` = :user_id
 
+    >>> Statement('users').order('user_id', 'desc').order('last_login_time', 'desc').where(user_id=3).select()
+    SELECT name FROM `users` WHERE `user_id` = :user_id ORDER `user_id` DESC, `last_login_time` DESC
+
     >>> s = Statement('users').set(name='test', test=123).where(user_id=3).update()
     UPDATE `users` SET name = :name, test = :test WHERE user_id = :user_id
 
@@ -25,20 +28,33 @@ class Statement(object):
 
     def __init__(self, table_name):
         self.table_name = table_name
-        self.select_columns = []
-        self.set_columns = {}
-        self.where_columns = {}
+        self._select_columns = []
+        self._set_columns = {}
+        self._where_columns = {}
+        self._order_columns = []
+        self._limit_cnt = 0
 
     def columns(self, *args):
-        self.select_columns.extend(args)
+        self._select_columns.extend(args)
         return self
 
     def set(self, **kwargs):
-        self.set_columns.update(kwargs)
+        self._set_columns.update(kwargs)
+        return self
+
+    def order(self, column, order):
+        self._order_columns.append({
+            'column': column,
+            'order': order
+        })
+        return self
+
+    def limit(self, limit_cnt):
+        self._limit_cnt = limit_cnt
         return self
 
     def where(self, **kwargs):
-        self.where_columns.update(kwargs)
+        self._where_columns.update(kwargs)
         return self
 
     def select(self, connect):
@@ -46,10 +62,14 @@ class Statement(object):
             SELECT {select_columns}
             FROM `{table_name}`
             {where_statement}
+            {order_statement}
+            {limit_statement}
         """.format(
-            select_columns=self._select_column_part(*self.select_columns) if self.select_columns else '*',
+            select_columns=self._select_column_part(*self._select_columns) if self._select_columns else '*',
             table_name=self.table_name,
-            where_statement=self._where_part(**self.where_columns)
+            where_statement=self._where_part(**self._where_columns),
+            order_statement=self._order_part(*self._order_columns) if self._order_columns else '',
+            limit_statement=self._limit_part(self._limit_cnt) if self._limit_cnt else ''
         )
         return connect.execute(text(query), **self.fetch_params)
 
@@ -58,7 +78,7 @@ class Statement(object):
             INSERT INTO `{table_name}`
             SET
               {set_statement}
-        """.format(table_name=self.table_name, set_statement=self._set_part(**self.set_columns))
+        """.format(table_name=self.table_name, set_statement=self._set_part(**self._set_columns))
         return connect.execute(text(query), **self.fetch_params)
 
     def update(self, connect):
@@ -67,10 +87,14 @@ class Statement(object):
             SET
               {set_statement}
             {where_statement}
+            {order_statement}
+            {limit_statement}
         """.format(
             table_name=self.table_name,
-            set_statement=self._set_part(**self.set_columns),
-            where_statement=self._where_part(**self.where_columns)
+            set_statement=self._set_part(**self._set_columns),
+            where_statement=self._where_part(**self._where_columns),
+            order_statement=self._order_part(*self._order_columns) if self._order_columns else '',
+            limit_statement=self._limit_part(self._limit_cnt) if self._limit_cnt else ''
         )
         return connect.execute(text(query), **self.fetch_params)
 
@@ -78,17 +102,21 @@ class Statement(object):
         query = """
             DELETE FROM `{table_name}`
             {where_statement}
+            {order_statement}
+            {limit_statement}
         """.format(
             table_name=self.table_name,
-            where_statement=self._where_part(**self.where_columns)
+            where_statement=self._where_part(**self._where_columns),
+            order_statement=self._order_part(*self._order_columns) if self._order_columns else '',
+            limit_statement=self._limit_part(self._limit_cnt) if self._limit_cnt else ''
         )
         return connect.execute(text(query), **self.fetch_params)
 
     @property
     def fetch_params(self):
         params = {}
-        params.update({'set_{}'.format(key): value for key, value in self.set_columns.items()})
-        params.update({'where_{}'.format(key): value for key, value in self.where_columns.items()})
+        params.update({'set_{}'.format(key): value for key, value in self._set_columns.items()})
+        params.update({'where_{}'.format(key): value for key, value in self._where_columns.items()})
         return params
 
     @staticmethod
@@ -104,4 +132,18 @@ class Statement(object):
         if len(kwargs) == 0:
             return ''
         else:
-            return ''.join(['WHERE ', ' AND '.join(['`{}` = :where_{}'.format(column, column) for column in kwargs])])
+            return ''.join(['WHERE ', ' AND '.join(['`{}` = :where_{}'.format(column, column)
+                                                    if kwargs[column] is not None else '`{}` IS NULL'.format(column)
+                                                    for column in kwargs])])
+
+    @staticmethod
+    def _order_part(*args):
+        if len(args) == 0:
+            return ''
+        return 'ORDER {}'.format(', '.join(['{} {}'.format(row['column'], row['order']) for row in args]))
+
+    @staticmethod
+    def _limit_part(limit_cnt):
+        if limit_cnt == 0:
+            return ''
+        return "LIMIT {}".format(limit_cnt)
