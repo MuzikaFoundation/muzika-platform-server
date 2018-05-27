@@ -82,6 +82,9 @@ class Statement(object):
         return connect.execute(text(query), **self.fetch_params)
 
     def update(self, connect):
+        if len(self._where_columns) == 0:
+            raise Exception('[Danger] Muzika DB ORM not allow no-where-condition update query!')
+
         query = """
             UPDATE `{table_name}`
             SET
@@ -99,6 +102,9 @@ class Statement(object):
         return connect.execute(text(query), **self.fetch_params)
 
     def delete(self, connect):
+        if len(self._where_columns) == 0:
+            raise Exception('[Danger] Muzika DB ORM not allow no-where-condition delete query!')
+
         query = """
             DELETE FROM `{table_name}`
             {where_statement}
