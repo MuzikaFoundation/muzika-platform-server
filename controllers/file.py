@@ -40,4 +40,7 @@ def _upload_file():
         if not file:
             return helper.response_err(ER.UPLOAD_FAIL, ER.UPLOAD_FAIL_MSG)
 
-        return helper.response_ok({'file_id': file['file_id']})
+        return helper.response_ok({
+            'file_id': file['file_id'],
+            'ipfs_hash': file_hash
+        })
