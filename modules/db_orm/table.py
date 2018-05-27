@@ -4,10 +4,12 @@ BOARD_TYPE_LIST = (
     'sheet',
 )
 
+
 class Table:
     USERS = 'users'
     SIGN_MESSAGES = 'sign_messages'
     FILES = 'files'
+    PAPERS = 'papers'
 
     @staticmethod
     def board(board_type):
