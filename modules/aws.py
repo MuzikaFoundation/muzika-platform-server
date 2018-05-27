@@ -21,7 +21,7 @@ _credential = aws_config.get('credential')
 
 # if credential is not configured in secret json file
 if _credential is None:
-    # load credentials from credentials profile (muzika profile)
+    # load credentials from credentials profile
     session = boto3.Session()
 else:
     # else, configure from secret json file
@@ -78,11 +78,11 @@ class MuzikaS3Bucket(object):
         db.statement(db.table.FILES).set(
             user_id=user_id,
             type=file_type,
-            s3_bucket=bucket,
+            bucket=bucket,
             object_key=object_key,
             file_name=name,
             file_size=file_len,
-            hsah=file_hash,
+            hash=file_hash,
             expired_at=expired_at
         ).insert(connection)
 
