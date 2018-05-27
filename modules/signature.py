@@ -37,19 +37,18 @@ def validate_signature(web3, address, sig_obj):
         purpose = sig_obj.get('purpose')
         message = sig_obj.get('message')
         version = sig_obj.get('signature_version', 1)
-        signature = HexBytes(sig_obj.get('signature'))
+        signature = sig_obj.get('signature')
 
-        muzika_message = construct_sign_message(purpose, message, version)
-        message_hash = defunct_hash_message(web3.sha3(muzika_message))
+        message_hash = construct_sign_message(purpose, message, version)
 
         # recover address from hash and signature
         recover_address = web3.eth.account.recoverHash(message_hash, signature=signature)
 
         # if equal to address, it's valid signature.
         return recover_address.lower() == address.lower()
-    except TypeError:
+    except TypeError as e:
         # if unsupported signature version or invalid variable format, fail to validate
         return False
-    except ValueError:
+    except ValueError as e:
         return False
 

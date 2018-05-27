@@ -1,16 +1,26 @@
-
 """
  Muzika
 """
+from cytoolz import (
+    compose,
+)
+from eth_account.internal.signing import (
+    signature_wrapper,
+)
+from eth_utils import (
+    keccak,
+    to_bytes,
+)
+from hexbytes import (
+    HexBytes,
+)
 
-from sqlalchemy import text
 from modules import database as db
 
 __all__ = [
     'generate_random_sign_message',
     'construct_sign_message',
 ]
-
 
 SIGN_MESSAGE_LENGTH = 20
 SIGN_MESSAGE_CHAR = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
@@ -99,41 +109,34 @@ def expire_sign_message(user_id, cache=None):
     cache().delete(msg_url)
 
 
-def construct_sign_message(purpose, message, version=1):
-    signed_message_header = b'Ethereum Signed Message:\n'
-    mz_message = '{}\nSignature : {}'.format(purpose, message).encode('ascii')
-    msg_len = len(mz_message)
+# Trezor format
+def trezor_signature_wrapper(message, version=b'E'):
+    preamble = b'\x19Ethereum Signed Message:\n'
+    msg_len = len(message)
 
-    if version == 1:
-        # Metamask format
-        mz_len_bytes = '{}'.format(msg_len).encode('ascii')
-    elif version == 2:
-        # Trezor format
-        if msg_len < 253:
-            mz_len_bytes = bytes([msg_len & 0xFF])
-        elif msg_len < 65536:
-            mz_len_bytes = bytes([
-                253,
-                msg_len & 0xFF,
-                (msg_len >> 8) & 0xFF,
-            ])
-        else:
-            mz_len_bytes = bytes([
-                254,
-                msg_len & 0xFF,
-                (msg_len >> 8) & 0xFF,
-                (msg_len >> 16) & 0xFF,
-                (msg_len >> 24) & 0xFF,
-            ])
+    if msg_len < 253:
+        size = bytes([msg_len & 0xFF])
+    elif msg_len < 65536:
+        size = bytes([
+            253,
+            msg_len & 0xFF,
+            (msg_len >> 8) & 0xFF,
+        ])
     else:
-        # unsupported signature version
-        return None
+        size = bytes([
+            254,
+            msg_len & 0xFF,
+            (msg_len >> 8) & 0xFF,
+            (msg_len >> 16) & 0xFF,
+            (msg_len >> 24) & 0xFF,
+        ])
 
-    entire_message = b''.join([
-        bytes([len(signed_message_header)]),  # length of signed message
-        signed_message_header,
-        mz_len_bytes,
-        mz_message,
-    ])
+    return preamble + size + message
 
-    return entire_message
+
+def construct_sign_message(purpose, message, version=1):
+    mz_message = '{}\nSignature: {}'.format(purpose, message)
+
+    message_bytes = to_bytes(text=mz_message)
+    recovery_hasher = compose(HexBytes, keccak, trezor_signature_wrapper if version == 2 else signature_wrapper)
+    return recovery_hasher(message_bytes)

@@ -85,9 +85,9 @@ def _login():
     signature = json_form.get('signature')
     sign_message_id = json_form.get('message_id')
     sign_message = json_form.get('message')     # only for unregistered user
-    signature_version = json_form.get('signature_version')
+    signature_version = json_form.get('signature_version', 1)
 
-    user_name = json_form.get('user_name')
+    user_name = json_form.get('user_name', '')
 
     web3 = get_web3()
 

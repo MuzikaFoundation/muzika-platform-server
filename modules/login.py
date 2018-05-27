@@ -67,8 +67,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         # if registered user, get sign message from cache. (ignore unregistered sign message)
         if user_id:
             from modules.sign_message import get_message_for_user
-            cache = MuzikaCache()
-            sign_message = get_message_for_user(user_id, cache=cache)
+            sign_message = get_message_for_user(address)
         else:
             # if invalid message format
             if not validate_message(sign_message):
@@ -100,7 +99,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     if not user_id:
         if default_user_name is not None:
             user_id = db.statement(db.table.USERS).set(address=address,
-                                                       user_name=default_user_name).insert(connection).lastrowid
+                                                       name=default_user_name).insert(connection).lastrowid
         else:
             return None
 
@@ -181,30 +180,37 @@ def jwt_check(func):
         # get sign message for calculating hash
         request.connection = db.engine_rdonly.connect()
         sign_message_query_str = """
-            SELECT * FROM `sign_messages` `sm`
-            INNER JOIN `users` `u`
-            ON (`u`.`user_id` = `sm`.`user_id`)
-            WHERE `message_id` = :sign_message_id
+            SELECT `u`.*, '!sign_message', `sm`.* FROM `users` `u`
+            INNER JOIN `sign_messages` `sm` ON (`u`.`user_id` = `sm`.`user_id`)
+            WHERE `message_id` = :sign_message_id AND `address` = :address
+            LIMIT 1
         """
-        sign_message_query = request.connection.execute(text(sign_message_query_str),
-                                                        sign_message_id=sign_message_id).fetchone()
-        user_id = sign_message_query['user_id']
-        private_key = sign_message_query['private_key']
-        sign_user_address = sign_message_query['address']
+        user_row = request.connection.execute(text(sign_message_query_str),
+                                              address=address,
+                                              sign_message_id=sign_message_id).fetchone()
+        if user_row is not None:
+            user_row = db.to_relation_model(user_row)
+            user_id = user_row['user_id']
+            sign_message = user_row['sign_message']
 
-        # get hash from decoded JWT
-        decoded_hash = decoded_token['hash']
+            del user_row['sign_message']
 
-        # calculate hash from db
-        real_hash = hashlib.md5("{}-{}-{}-{}".format(user_id, sign_message_id, sign_user_address, private_key)
-                                .encode('utf-8')).hexdigest()
+            # get hash from decoded JWT
+            decoded_hash = decoded_token['hash']
 
-        # if decoded hash is not equal to calculated hash from db, it's invalid token
-        if decoded_hash != real_hash:
-            return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
+            # calculate hash from db
+            real_hash = hashlib.md5("{}-{}-{}-{}".format(user_id,
+                                                         sign_message_id,
+                                                         user_row['address'],
+                                                         sign_message['private_key'])
+                                    .encode('utf-8')).hexdigest()
 
-        # authenticated and inject user information
-        request.user = dict(sign_message_query)
+            # if decoded hash is not equal to calculated hash from db, it's invalid token
+            if decoded_hash != real_hash:
+                return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
+
+            # authenticated and inject user information
+            request.user = user_row
 
         return func(*args, **kwargs)
 
