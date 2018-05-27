@@ -16,10 +16,12 @@ def get_default_provider():
     )
 
 
-def get_web3(provider=None):
+def get_web3(provider=None, default_account=None):
     """
     Returns web3 instance for backend interacting with block chain network. If not setting provider parameter, bring
     configuration from config.py.
     """
-    return Web3(provider) if provider else Web3(get_default_provider())
+    web3 = Web3(provider) if provider else Web3(get_default_provider())
+    web3.eth.defaultAccount = default_account or web3.eth.accounts[0]
+    return web3
 
