@@ -112,9 +112,10 @@ def trezor_signature_wrapper(message, version=b'E'):
     return preamble + size + message
 
 
+# Custom Implementation of eth_account.messages.defunct_hash_message
+# Support Trezor sign-message wrapper
 def construct_sign_message(purpose, message, version=1):
     mz_message = '{}\nSignature: {}'.format(purpose, message)
-
     message_bytes = to_bytes(text=mz_message)
     recovery_hasher = compose(HexBytes, keccak, trezor_signature_wrapper if version == 2 else signature_wrapper)
     return recovery_hasher(message_bytes)
