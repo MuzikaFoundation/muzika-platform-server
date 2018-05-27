@@ -97,7 +97,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     # if user(wallet) is not registered yet, register it with empty name
     if not user_id:
         if default_user_name is not None:
-            user_id = db.statement(db.table.USERS).set(address=web3.toCheckSumAddress(address),
+            user_id = db.statement(db.table.USERS).set(address=address,
                                                        name=default_user_name).insert(connection).lastrowid
         else:
             return None
