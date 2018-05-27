@@ -34,8 +34,10 @@ def _upload_file():
 
     bucket = MuzikaS3Bucket(file_type=file_type)
     with db.engine_rdwr.begin() as connection:
-        if not bucket.put(connection, name=file_name, value=file_data, user_id=user_id,
-                          file_type=file_type, content_type=file.content_type, hash=file_hash):
+        file = bucket.put(connection, name=file_name, value=file_data, user_id=user_id,
+                          file_type=file_type, content_type=file.content_type, hash=file_hash)
+
+        if not file:
             return helper.response_err(ER.UPLOAD_FAIL, ER.UPLOAD_FAIL_MSG)
 
-        return helper.response_ok({'status': 'success'})
+        return helper.response_ok({'file_id': file['file_id']})

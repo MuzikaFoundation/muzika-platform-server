@@ -75,7 +75,7 @@ class MuzikaS3Bucket(object):
             object_key = ''.join([directory, '/', object_key])
 
         # insert the file information into the db
-        db.statement(db.table.FILES).set(
+        file_id = db.statement(db.table.FILES).set(
             user_id=user_id,
             type=file_type,
             bucket=bucket,
@@ -84,7 +84,7 @@ class MuzikaS3Bucket(object):
             file_size=file_len,
             hash=file_hash,
             expired_at=expired_at
-        ).insert(connection)
+        ).insert(connection).lastrowid
 
         s3 = session.client('s3')
 
@@ -97,6 +97,7 @@ class MuzikaS3Bucket(object):
         )
 
         return {
+            'file_id': file_id,
             'file_type': file_type,
             'file_hash': file_hash,
             'file_size': file_len,
@@ -104,3 +105,15 @@ class MuzikaS3Bucket(object):
             'object_key': object_key,
             'content_type': content_type
         }
+
+    def get(self, connection, file_id):
+        s3 = session.client('s3')
+
+        statement = db.Statement(db.table.FILES).where(file_id=file_id).limit(1)
+        file = db.to_relation_model(statement.select(connection).fetchone())
+
+        # if file does not exist,
+        if file is None:
+            return None
+
+        return s3.get_object(Bucket=file['bucket'], Key=file['object_key'])
