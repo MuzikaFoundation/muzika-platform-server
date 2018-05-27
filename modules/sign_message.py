@@ -41,9 +41,10 @@ def generate_random_sign_message():
     return sign_message
 
 
-def register_sign_message_by_id(connection, user_id, message=None):
+def register_sign_message_by_id(connection, user_id, platform_type, message=None):
     message = message or generate_random_sign_message()
     message_id = db.statement(db.table.SIGN_MESSAGES).set(user_id=user_id,
+                                                          platform_type=platform_type,
                                                           message=message).insert(connection).lastrowid
     return message_id, message
 

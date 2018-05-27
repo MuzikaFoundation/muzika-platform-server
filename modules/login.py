@@ -20,6 +20,9 @@ jwt_json = load_secret_json('jwt')
 JWT_SECRET_KEY = jwt_json['jwt_secret_key']
 
 
+PLATFORM_TYPES = ['electron', 'app']
+
+
 def generate_jwt_token(connection, web3, address, signature, **kwargs):
     """
     Validate the user signature and if authenticated, generate a new JWT token for the user.
@@ -44,6 +47,10 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     # if first sign in, get message not by sign message id since db doesn't have it
     signature_version = kwargs.get('signature_version')
     default_user_name = kwargs.get('default_user_name', None)
+    platform_type = kwargs.get('platform_type')
+
+    if platform_type not in PLATFORM_TYPES:
+        return None
 
     """
     Get sign message and its private key. The private key is used for the hash value in JWT token.
@@ -82,15 +89,19 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         else:
             return None
 
+    # delete previous sign_message (allow one active sign message for one platform type)
+    db.statement(db.table.SIGN_MESSAGES).where(user_id=user_id,
+                                               platform_type=platform_type).delete(connection)
+
     # create a new sign message
-    sign_message_id, _ = register_sign_message_by_id(connection, user_id, sign_message)
+    sign_message_id, _ = register_sign_message_by_id(connection, user_id, platform_type, sign_message)
 
     private_key = generate_random_sign_message()
 
     # after checking validation, authenticated, so update sign message
     db.statement(db.table.SIGN_MESSAGES) \
-        .set(user_id=user_id, private_key=private_key) \
-        .where(message_id=sign_message_id).update(connection)
+        .set(private_key=private_key) \
+        .where(message_id=sign_message_id, user_id=user_id).update(connection)
 
     # JWT payload
     payload = {
