@@ -174,7 +174,7 @@ def jwt_check(func):
         # decode token
         try:
             decoded_token = jwt.decode(token, JWT_SECRET_KEY, verify=True, audience=WebServerConfig.issuer)
-        except jwt.exceptions.InvalidSignatureError:
+        except jwt.exceptions.InvalidTokenError:
             return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
         address, sign_message_id = decoded_token['jti'].split('-')
 
