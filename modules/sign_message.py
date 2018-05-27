@@ -79,11 +79,11 @@ def get_message_for_user(address, cache=None, always_new=False):
         return user_message_info['sign_message']
 
 
-def expire_sign_message(user_id, cache=None):
+def expire_sign_message(address, cache=None):
     from modules.cache import MuzikaCache
 
     cache = cache or MuzikaCache()
-    msg_url = '/db/sign-message/{}'.format(user_id)
+    msg_url = '/db/sign-message/{}'.format(address)
     cache().delete(msg_url)
 
 

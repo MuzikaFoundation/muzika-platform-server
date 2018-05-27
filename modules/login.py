@@ -104,7 +104,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     }
 
     # if validated, expire the message, so never use the sign message anymore.
-    expire_sign_message(user_id)
+    expire_sign_message(address)
 
     # return JWT token
     return jwt.encode(payload=payload, key=JWT_SECRET_KEY, algorithm='HS256',
