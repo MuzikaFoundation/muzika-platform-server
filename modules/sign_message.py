@@ -41,36 +41,14 @@ def generate_random_sign_message():
     return sign_message
 
 
-def validate_message(message):
-    """
-    Validate the message format.
-    """
-    # if the message length is invalid
-    if len(message) != SIGN_MESSAGE_LENGTH:
-        return False
-
-    for ch in message:
-        if ch not in SIGN_MESSAGE_CHAR:
-            return False
-
-    return True
-
-
 def register_sign_message_by_id(connection, user_id, message=None):
     message = message or generate_random_sign_message()
-    message_id = db.statement(db.table.SIGN_MESSAGES).set(user_id=user_id, message=message).insert(connection).lastrowid
+    message_id = db.statement(db.table.SIGN_MESSAGES).set(user_id=user_id,
+                                                          message=message).insert(connection).lastrowid
     return message_id, message
 
 
-def register_sign_message_by_address(connection, address, message=None):
-    user_row = db.statement(db.table.SIGN_MESSAGES).columns('user_id').where(address=address).fetchone()
-    if user_row is not None:
-        return register_sign_message_by_id(connection, user_row['user_id'], message)
-    else:
-        return None, None
-
-
-def get_message_for_user(address, cache=None):
+def get_message_for_user(address, cache=None, always_new=False):
     """
     Return a random sign message for the user.
 
@@ -84,7 +62,7 @@ def get_message_for_user(address, cache=None):
     msg_url = '/db/sign-message/{}'.format(address)
     user_message_info = cache().get(msg_url)
 
-    if user_message_info is None:
+    if user_message_info is None or always_new is True:
         # if message is not in cache, make a new message
         message = generate_random_sign_message()
 

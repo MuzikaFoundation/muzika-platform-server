@@ -36,46 +36,22 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     import datetime
     from config import WebServerConfig
     from modules.sign_message import (
-        generate_random_sign_message, register_sign_message_by_id, validate_message, expire_sign_message
+        generate_random_sign_message, register_sign_message_by_id, expire_sign_message
     )
     from modules.signature import validate_signature
-    from modules.cache import MuzikaCache
+    from modules.sign_message import get_message_for_user
 
     # if first sign in, get message not by sign message id since db doesn't have it
     signature_version = kwargs.get('signature_version')
-    sign_message = kwargs.get('sign_message')
     default_user_name = kwargs.get('default_user_name', None)
 
-    # allocate later if cache is used
-    cache = None
+    """
+    Get sign message and its private key. The private key is used for the hash value in JWT token.
+    
+    get random-generated sign message from database (get by message_id),
+    """
 
-    try:
-        """
-        Get sign message and its private key. The private key is used for the hash value in JWT token.
-        
-        If the user is registered in database, get random-generated sign message from database (get by message_id),
-        and if unregistered, get any message.
-        """
-
-        # get user id by address
-        user_id_query = db.statement(db.table.USERS).where(address=address).select(connection).fetchone()
-        if user_id_query:
-            user_id = user_id_query['user_id']
-        else:
-            user_id = None
-
-        # if registered user, get sign message from cache. (ignore unregistered sign message)
-        if user_id:
-            from modules.sign_message import get_message_for_user
-            sign_message = get_message_for_user(address)
-        else:
-            # if invalid message format
-            if not validate_message(sign_message):
-                return None
-
-    except TypeError:
-        # if sign message does not exist
-        return None
+    sign_message = get_message_for_user(address, always_new=False)
 
     tz = arrow.now(WebServerConfig.timezone).datetime
 
@@ -94,6 +70,10 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
                                                       'signature_version': signature_version}):
         return None
 
+    # get user id by address
+    user_id = db.statement(db.table.USERS).where(address=address).select(connection).fetchone()
+    user_id = user_id['user_id'] if user_id is not None else None
+
     # if user(wallet) is not registered yet, register it with empty name
     if not user_id:
         if default_user_name is not None:
@@ -109,8 +89,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
 
     # after checking validation, authenticated, so update sign message
     db.statement(db.table.SIGN_MESSAGES) \
-        .set(user_id=user_id,
-             private_key=private_key) \
+        .set(user_id=user_id, private_key=private_key) \
         .where(message_id=sign_message_id).update(connection)
 
     # JWT payload
@@ -124,11 +103,8 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         'exp': tz + datetime.timedelta(days=30)
     }
 
-    if not cache:
-        cache = MuzikaCache()
-
     # if validated, expire the message, so never use the sign message anymore.
-    expire_sign_message(user_id, cache)
+    expire_sign_message(user_id)
 
     # return JWT token
     return jwt.encode(payload=payload, key=JWT_SECRET_KEY, algorithm='HS256',

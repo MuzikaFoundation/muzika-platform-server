@@ -47,7 +47,7 @@ def _get_user_sign_message(address):
     if not check_address_format(address):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    return helper.response_ok(get_message_for_user(address))
+    return helper.response_ok(get_message_for_user(address, always_new=True))
 
 
 @blueprint.route('/user', methods=['PUT'])
@@ -83,8 +83,6 @@ def _login():
     json_form = request.get_json(force=True, silent=True)
     address = json_form.get('address')
     signature = json_form.get('signature')
-    sign_message_id = json_form.get('message_id')
-    sign_message = json_form.get('message')     # only for unregistered user
     signature_version = json_form.get('signature_version', 1)
 
     user_name = json_form.get('user_name', '')
@@ -96,7 +94,6 @@ def _login():
             connection,
             web3, address, signature,
             signature_version=signature_version,
-            sign_message=sign_message,   # only for unregistered user
             default_user_name=user_name
         )
 
