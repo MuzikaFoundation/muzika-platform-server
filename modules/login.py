@@ -72,7 +72,6 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
             # if invalid message format
             if not validate_message(sign_message):
                 return None
-        private_key = generate_random_sign_message()
 
     except TypeError:
         # if sign message does not exist
@@ -98,13 +97,15 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     # if user(wallet) is not registered yet, register it with empty name
     if not user_id:
         if default_user_name is not None:
-            user_id = db.statement(db.table.USERS).set(address=address,
+            user_id = db.statement(db.table.USERS).set(address=web3.toCheckSumAddress(address),
                                                        name=default_user_name).insert(connection).lastrowid
         else:
             return None
 
     # create a new sign message
     sign_message_id, _ = register_sign_message_by_id(connection, user_id, sign_message)
+
+    private_key = generate_random_sign_message()
 
     # after checking validation, authenticated, so update sign message
     db.statement(db.table.SIGN_MESSAGES) \
