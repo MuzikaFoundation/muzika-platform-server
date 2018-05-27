@@ -89,10 +89,6 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         else:
             return None
 
-    # delete previous sign_message (allow one active sign message for one platform type)
-    db.statement(db.table.SIGN_MESSAGES).where(user_id=user_id,
-                                               platform_type=platform_type).delete(connection)
-
     # create a new sign message
     sign_message_id, _ = register_sign_message_by_id(connection, user_id, platform_type, sign_message)
 
