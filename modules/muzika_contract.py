@@ -67,3 +67,19 @@ class MuzikaContractHandler:
         Returns a contract.
         """
         return web3.eth.contract(**self.get_contract_parameter(contract_name, address=address))
+
+
+class MuzikaContract(object):
+
+    # child class of this class must define contract name
+    __contract_name__ = ''
+    contract = None
+
+    def __init__(self, web3, *args, **kwargs):
+        self.contract_address = kwargs.get('contract_address')
+        contract_handler = MuzikaContractHandler()
+        self.web3 = web3
+        self.contract = contract_handler.get_contract(web3, self.__contract_name__, address=self.contract_address)
+
+    def generate(self, *args, **kwargs):
+        return self.contract.constructor(*args, **kwargs).transact()
