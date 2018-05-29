@@ -55,3 +55,4 @@ def _get_paper_file():
     response = make_response(response_body)
     response.headers['content-length'] = len(response_body)
     response.headers['content-type'] = 'text/plain'
+    return response
