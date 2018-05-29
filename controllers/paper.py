@@ -186,7 +186,8 @@ def _get_paper_file(contract_address):
             block_request = BlockRequest(block_hash=file_hash, public_key=public_key)
             encrypted_block = block_request.encrypt(block)
 
-            response = make_response(encrypted_block.encrypted_key + encrypted_block.data)
-            response.headers['content-length'] = len(encrypted_block.encrypted_key + encrypted_block.data)
+            response_body = encrypted_block.encrypted_key + encrypted_block.data
+            response = make_response(response_body)
+            response.headers['content-length'] = len(response_body)
             response.headers['content-type'] = 'text/plain'
             return response
