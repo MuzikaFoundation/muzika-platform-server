@@ -7,6 +7,9 @@ from config import WebServerConfig
 from controllers import (
     paper, user, file, board, comment, like
 )
+from controllers.test import (
+    paper_test
+)
 from modules.json_encoder import FlaskJSONEncoder
 
 application = Flask(__name__)
@@ -30,6 +33,7 @@ production_blueprints = [
 
 development_blueprints = [
     # define blueprints for only development
+    paper_test.blueprint,
 ]
 
 
