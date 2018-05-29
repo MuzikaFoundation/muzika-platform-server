@@ -60,6 +60,7 @@ def get_message_for_user(address, cache=None, always_new=False):
     from modules.cache import MuzikaCache
 
     cache = cache or MuzikaCache()
+    address = address.lower()
     msg_url = '/db/sign-message/{}'.format(address)
     user_message_info = cache().get(msg_url)
 

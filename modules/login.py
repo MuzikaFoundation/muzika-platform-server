@@ -48,6 +48,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     signature_version = kwargs.get('signature_version')
     default_user_name = kwargs.get('default_user_name', None)
     platform_type = kwargs.get('platform_type')
+    checksum_address = web3.toChecksumAddress(address)
 
     if platform_type not in PLATFORM_TYPES:
         return None
@@ -78,13 +79,13 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         return None
 
     # get user id by address
-    user_id = db.statement(db.table.USERS).where(address=address).select(connection).fetchone()
+    user_id = db.statement(db.table.USERS).where(address=checksum_address).select(connection).fetchone()
     user_id = user_id['user_id'] if user_id is not None else None
 
     # if user(wallet) is not registered yet, register it with empty name
     if not user_id:
         if default_user_name is not None:
-            user_id = db.statement(db.table.USERS).set(address=web3.toChecksumAddress(address),
+            user_id = db.statement(db.table.USERS).set(address=checksum_address,
                                                        name=default_user_name).insert(connection).lastrowid
         else:
             return None
@@ -101,7 +102,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
 
     # JWT payload
     payload = {
-        'hash': hashlib.md5("{}-{}-{}-{}".format(user_id, sign_message_id, address, private_key)
+        'hash': hashlib.md5("{}-{}-{}-{}".format(user_id, sign_message_id, checksum_address, private_key)
                             .encode('utf-8')).hexdigest(),
         'jti': '{}-{}'.format(address, sign_message_id),
         'iss': WebServerConfig.issuer,
