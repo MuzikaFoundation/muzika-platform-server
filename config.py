@@ -46,6 +46,9 @@ class MuzikaContractConfig:
     """
     build_path = './muzika-contract/build/contracts'
 
+    # The registered transactions are removed from the database if they are not mined over specific time.
+    register_expired_seconds = 3 * 60 * 60
+
 
 class SignMessageConfig:
     """
