@@ -10,11 +10,90 @@ from modules.contracts.paper_contract import MuzikaPaperContract
 from modules.ipfs import RelayIpfs
 from modules.login import jwt_check
 from modules.muzika_contract import MuzikaContractHandler
+from modules.pagination import Pagination
 from modules.response import error_constants as ER
 from modules.response import helper
 from modules.web3 import get_web3
 
 blueprint = Blueprint('paper', __name__, url_prefix='/api')
+
+
+@blueprint.route('/paper', methods=['GET'])
+def _get_paper_contracts():
+    """
+    Lists paper contracts registered in the server.
+
+    Users register their paper contracts with transaction hash by POST method, but only mined transactions (so contract
+    address exists) are listed by this API.
+    """
+    page = request.args.get('page', 1)
+
+    if not isinstance(page, int):
+        return helper.response_err(ER.INVALID_REQUEST, ER.INVALID_REQUEST_BODY)
+
+    paper_statement = """
+        SELECT `p`.*, '!user', `u`.* FROM `papers` `p`
+        LEFT JOIN `users` `u`
+        ON (`p`.`user_id` = `u`.`user_id`)
+        WHERE `contract_address` IS NOT NULL
+    """
+    count_statement  = """
+        SELECT COUNT(*) AS `cnt` FROM `papers`
+        WHERE `contract_address` IS NOT NULL
+    """
+    order_statement = """
+        ORDER BY `paper_id` DESC
+    """
+
+    with db.engine_rdonly.connect() as connection:
+        return helper.response_ok(Pagination(
+            fetch=paper_statement,
+            count=count_statement,
+            order=order_statement,
+            current_page=page,
+            connection=connection
+        ).get_result(db.to_relation_model))
+
+
+@blueprint.route('/my-paper', methods=['GET'])
+@jwt_check
+def _get_my_paper_contracts():
+    """
+    Lists paper contracts that the user has registered.
+
+    It lists including not-mined transactions.
+    """
+    user_id = request.user['user_id']
+    page = request.args.get('page', 1)
+
+    if not isinstance(page, int):
+        return helper.response_err(ER.INVALID_REQUEST, ER.INVALID_REQUEST_BODY)
+
+    paper_statement = """
+            SELECT `p`.*, '!user', `u`.* FROM `papers` `p`
+            LEFT JOIN `users` `u`
+            ON (`p`.`user_id` = `u`.`user_id`)
+            WHERE `p`.`user_id` = :user_id 
+        """
+    count_statement = """
+            SELECT COUNT(*) AS `cnt` FROM `papers`
+            WHERE `user_id` = :user_id
+        """
+    order_statement = """
+            ORDER BY `paper_id` DESC
+        """
+
+    with db.engine_rdonly.connect() as connection:
+        return helper.response_ok(Pagination(
+            fetch=paper_statement,
+            count=count_statement,
+            order=order_statement,
+            current_page=page,
+            connection=connection,
+            fetch_params={
+                'user_id': user_id
+            }
+        ).get_result(db.to_relation_model))
 
 
 @blueprint.route('/paper', methods=['POST'])
