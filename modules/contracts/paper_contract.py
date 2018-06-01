@@ -16,5 +16,19 @@ class MuzikaPaperContract(MuzikaContract):
         """
         return self.contract.functions.isPurchased(wallet_address).call()
 
+    def is_sold_out(self):
+        """
+        Return whether this paper is sold out, so cannot buy it.
+        :return: True if sold out, nor false if not
+        """
+        return self.contract.functions.soldOut().call()
+
+    def get_seller(self):
+        """
+        Return the seller's wallet address.
+        :return: seller's wallet address
+        """
+        return self.contract.functions.seller().call()
+
     def generate(self, seller, price, ipfs_file_hash, original_file_hash):
         return super(MuzikaPaperContract, self).generate(seller, price, ipfs_file_hash, original_file_hash)
