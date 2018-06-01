@@ -13,7 +13,14 @@ def _get_ipfs_node():
     """
     # TODO: seed the IPFS node by DNS?
     seed_list = [
-        '/ip4/52.78.36.21/tcp/4004/ws/ipfs/QmSMbmF2oZhVuu77vV7iWKiuBuEH6npAJYamq7Kgor5Eow'
+        {
+            'APIServer': 'http://52.78.36.21:7002',
+            'ID': '/ip4/52.78.36.21/tcp/4001/ipfs/QmZtphDfarH8XcjTM6ZVW6kGp3krqsCnYVJWmtao7N6nYf'
+        },
+        {
+            'APIServer': 'http://52.78.36.21:7002',
+            'ID': '/ip4/52.78.36.21/tcp/4004/ws/ipfs/QmZtphDfarH8XcjTM6ZVW6kGp3krqsCnYVJWmtao7N6nYf'
+        },
     ]
 
     return helper.response_ok(seed_list)
