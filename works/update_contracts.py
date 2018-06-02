@@ -1,16 +1,12 @@
-
-import os
 from sqlalchemy import text
 from web3.utils.threads import Timeout
-
-os.sys.path.append('..')
 
 from config import MuzikaContractConfig
 from modules import database as db
 from modules.web3 import get_web3
 
 
-if __name__ == '__main__':
+def update_contracts():
     web3 = get_web3()
 
     delete_query_statement = """

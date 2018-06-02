@@ -1,0 +1,4 @@
+#
+# contract_update -- schedules periodic for updating muzika contracts in database
+#
+*/5 * * * * root curl -XPOST localhost:7001/api/job/contracts
