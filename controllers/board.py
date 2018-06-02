@@ -23,10 +23,12 @@ def _get_board_posts(board_type):
     from modules.pagination import Pagination
 
     fetch_query_str = """
-        SELECT `b`.*, '!author', `u`.* 
+        SELECT `b`.*, '!author', `u`.*, '!sheet_music', `p`.*
         FROM `{}` `b` 
         INNER JOIN `users` `u` 
           ON (`u`.`user_id` = `b`.`user_id`)
+        INNER JOIN `papers` `p`
+          ON `p`.`paper_id` = `b`.`paper_id`
     """.format(table_name)
 
     count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}`".format(table_name)
@@ -74,6 +76,7 @@ def _post_to_community(board_type):
     """.format(db.table.tags(board_type))
 
     statement = db.Statement(table_name).set(user_id=user_id, title=title, content=content)
+    paper_statement = None
 
     if board_type == 'community':
         # community needs no additional columns
@@ -90,7 +93,17 @@ def _post_to_community(board_type):
         statement.set(genre=genre, youtube_video_id=youtube_video_id)
     elif board_type == 'sheet':
         # sheet needs additional columns for file
-        file_id = json_form.get('file_id')
+        sheet_music = json_form.get('sheet_music')
+        file_id = sheet_music.get('file_id')
+
+        # Do not use **sheet_music for safety
+        paper_statement = db.Statement(db.table.PAPERS).set(
+            user_id=user_id,
+            name=sheet_music.get('name'),
+            file_id=sheet_music.get('file_id'),
+            ipfs_file_hash=sheet_music.get('ipfs_file_hash'),
+            tx_hash=sheet_music.get('tx_hash')
+        )
 
         # if parameter is invalid or does not exist
         if not isinstance(file_id, int):
@@ -98,6 +111,10 @@ def _post_to_community(board_type):
         statement.set(file_id=file_id)
 
     with db.engine_rdwr.connect() as connection:
+        if paper_statement is not None:
+            paper_id = paper_statement.insert(connection).lastrowid
+            statement.set(paper_id=paper_id)
+
         post_id = statement.insert(connection).lastrowid
 
         # if tags exist, insert tags
