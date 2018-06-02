@@ -22,16 +22,28 @@ def _get_board_posts(board_type):
 
     from modules.pagination import Pagination
 
+    if board_type == 'sheet':
+        additional_columns = """
+            , '!sheet_music', `p`.*
+        """
+        inner_join = """
+            INNER JOIN `papers` `p`
+              ON `p`.`paper_id` = `b`.`paper_id`
+        """
+    else:
+        additional_columns = ''
+        inner_join = ''
+
     fetch_query_str = """
-        SELECT `b`.*, '!author', `u`.*, '!sheet_music', `p`.*
+        SELECT `b`.*, '!author', `u`.* {}
         FROM `{}` `b` 
         INNER JOIN `users` `u` 
           ON (`u`.`user_id` = `b`.`user_id`)
-        INNER JOIN `papers` `p`
-          ON `p`.`paper_id` = `b`.`paper_id`
-    """.format(table_name)
+        {}
+        WHERE `status` = :status
+    """.format(additional_columns, table_name, inner_join)
 
-    count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}`".format(table_name)
+    count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}` WHERE `status` = :status".format(table_name)
     order_query_str = "ORDER BY `post_id` DESC"
 
     with db.engine_rdonly.connect() as connection:
@@ -40,7 +52,10 @@ def _get_board_posts(board_type):
             fetch=fetch_query_str,
             count=count_query_str,
             order=order_query_str,
-            current_page=page
+            current_page=page,
+            fetch_params={
+                'status': 'posted'
+            }
         ).get_result(db.to_relation_model))
 
 
@@ -133,11 +148,28 @@ def _get_community_post(board_type, post_id):
     if not table_name:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    statement = db.Statement(table_name).where(post_id=post_id, status='posted')
+    if board_type == 'sheet':
+        additional_columns = """
+            , '!sheet_music', `p`.*
+        """
+        inner_join = """
+            LEFT JOIN `papers` `p`
+            ON (`p`.`paper_id` = `b`.`paper_id`)
+        """
+    else:
+        additional_columns = ''
+        inner_join = ''
+
+    post_query_str = """
+        SELECT `b`.* {} FROM `{}` `b`
+        {}
+        WHERE `post_id` = :post_id AND status = :status
+    """.format(additional_columns, table_name, inner_join)
+
     tags_statement = db.Statement(db.table.tags(board_type)).columns('name').where(post_id=post_id)
 
     with db.engine_rdonly.connect() as connection:
-        post = statement.select(connection).fetchone()
+        post = connection.execute(text(post_query_str), post_id=post_id, status='posted').fetchone()
         tags = tags_statement.select(connection)
 
         # if the post does not exist,
