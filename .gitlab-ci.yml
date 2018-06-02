@@ -10,6 +10,7 @@ deploy:develop:
     GIT_SUBMODULE_STRATEGY: recursive
   script:
     - cd ./muzika-contract && npm install && npm run contract:compile && npm run contract:import && cd ..
+    - cd scripts/ && python contract_linker.py --directory ../muzika-contract/build/contracts --version 3 && cd ..
     - mv muzika-contract/build/ muzika-contract-build/
     - rm -rf muzika-contract/
     - mkdir muzika-contract/ && mv muzika-contract-build/ muzika-contract/build/
