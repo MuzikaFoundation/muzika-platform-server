@@ -23,7 +23,7 @@ def _get_board_posts(board_type):
     from modules.pagination import Pagination
 
     fetch_query_str = """
-        SELECT `b`.*, '!user', `u`.* 
+        SELECT `b`.*, '!author', `u`.* 
         FROM `{}` `b` 
         INNER JOIN `users` `u` 
           ON (`u`.`user_id` = `b`.`user_id`)
