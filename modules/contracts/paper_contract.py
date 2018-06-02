@@ -14,7 +14,11 @@ class MuzikaPaperContract(MuzikaContract):
         :param wallet_address: wallet address to check
         :return: True if wallet purchased, nor false if not
         """
-        return self.contract.functions.isPurchased(wallet_address).call()
+        # @TODO Should provide `from` because of lack of the web3.eth.accounts[0] in test and main network
+        # So, Implement custom provider like provider engine or every call function should be provided with `from`
+        return self.contract.functions.isPurchased(wallet_address).call({
+            'from': '0x0000000000000000000000000000000000000000'
+        })
 
     def is_sold_out(self):
         """

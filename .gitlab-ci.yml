@@ -11,8 +11,6 @@ deploy:develop:
   before_script:
     - nohup ganache-cli &
     - cd ./muzika-contract && npm install && npm run contract:compile && npm run contract:import && cd ..
-    - python -m pip install web3
-    - cd scripts/ && python contract_linker.py --directory ../muzika-contract/build/contracts --version 3 && cd ..
     - mv muzika-contract/build/ muzika-contract-build/
     - rm -rf muzika-contract/
     - mkdir muzika-contract/ && mv muzika-contract-build/ muzika-contract/build/

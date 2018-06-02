@@ -51,11 +51,7 @@ class MuzikaContractHandler:
         """
         contract_interface = self.get_interface(contract_name)
         if contract_interface:
-            ret = dict(
-                abi=contract_interface['abi'],
-                bytecode=contract_interface['bytecode'],
-                bytecode_runtime=contract_interface['deployedBytecode']
-            )
+            ret = dict(abi=contract_interface['abi'])
             if address:
                 ret.update({'address': address})
             return ret
