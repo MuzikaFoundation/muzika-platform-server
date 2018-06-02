@@ -22,6 +22,8 @@ def get_web3(provider=None, default_account=None):
     configuration from config.py.
     """
     web3 = Web3(provider) if provider else Web3(get_default_provider())
-    web3.eth.defaultAccount = default_account or web3.eth.accounts[0]
+    if default_account is None and web3.eth.accounts:
+        default_account = web3.eth.accounts[0]
+    web3.eth.defaultAccount = default_account
     return web3
 
