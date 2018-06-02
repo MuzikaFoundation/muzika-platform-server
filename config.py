@@ -1,11 +1,9 @@
-
 """
 # Config.py
 
  Global constants for server configuration.
 """
 import os
-
 
 class WebServerConfig:
     """
@@ -14,7 +12,7 @@ class WebServerConfig:
     host = 'localhost'
     port = 7001
     timezone = 'UTC'
-    issuer = 'http://muzika.network'
+    issuer = 'https://muzika.network'
 
 
 class IPFSConfig:
@@ -33,9 +31,10 @@ class Web3ProviderConfig:
     """
     Global constants for web3 provider for interacting with ethereum block chain.
     """
-    endpoint_url = \
-        'http://localhost:8545' if os.environ.get('ENV') != 'production' \
-        else 'https://api.myetherapi.com/eth'
+    endpoint_url = {
+        'production': 'https://mainnet.infura.io/' + os.environ.get('INFURA_API_KEY', ''),
+        'stage': 'https://ropsten.infura.io/' + os.environ.get('INFURA_API_KEY', '')
+    }.get(os.environ.get('ENV', 'dev'), 'http://localhost:8545')
 
     timeout = 5
 
@@ -54,7 +53,7 @@ class SignMessageConfig:
     """
     Global constants for sign message
     """
-    unsigned_message_expired_time = 60          # 1 minute
+    unsigned_message_expired_time = 60  # 1 minute
     signed_message_expired_time = 24 * 60 * 60  # 1 day
 
 
@@ -64,5 +63,5 @@ class CacheConfig:
     """
     cache_type = 'redis' if os.environ.get('ENV') in ['production', 'stage'] else 'local'
     host = 'localhost'
-    port = 6379         # ignored if local cache
+    port = 6379  # ignored if local cache
     key_prefix = 'muzika-redis-cache'
