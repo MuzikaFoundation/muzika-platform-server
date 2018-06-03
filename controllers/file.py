@@ -29,8 +29,11 @@ def _upload_file():
     file_data = file.stream.read()
 
     # get ipfs hash value
-    ipfs = RelayIpfs()
-    file_hash = ipfs.get_connection().add_bytes(file_data)
+    # ipfs = RelayIpfs()
+    # file_hash = ipfs.get_connection().add_bytes(file_data)
+
+    # TODO: Download file from IPFS and verify file blob is same with encrypted file_data
+    file_hash = request.args.get('file_hash')
 
     bucket = MuzikaS3Bucket(file_type=file_type)
     with db.engine_rdwr.begin() as connection:
@@ -41,6 +44,5 @@ def _upload_file():
             return helper.response_err(ER.UPLOAD_FAIL, ER.UPLOAD_FAIL_MSG)
 
         return helper.response_ok({
-            'file_id': file['file_id'],
-            'ipfs_hash': file_hash
+            'file_id': file['file_id']
         })
