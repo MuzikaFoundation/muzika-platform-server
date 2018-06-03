@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request
 from sqlalchemy import text
 
@@ -34,16 +33,17 @@ def _get_board_posts(board_type):
         additional_columns = ''
         inner_join = ''
 
+    inner_join = "INNER JOIN `users` `u` ON (`u`.`user_id` = `b`.`user_id`)" + inner_join
+
     fetch_query_str = """
         SELECT `b`.*, '!author', `u`.* {}
         FROM `{}` `b` 
-        INNER JOIN `users` `u` 
-          ON (`u`.`user_id` = `b`.`user_id`)
         {}
         WHERE `status` = :status
     """.format(additional_columns, table_name, inner_join)
 
-    count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}` WHERE `status` = :status".format(table_name)
+    count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}` `b` {} WHERE `b`.`status` = :status".format(table_name,
+                                                                                                      inner_join)
     order_query_str = "ORDER BY `post_id` DESC"
 
     with db.engine_rdonly.connect() as connection:
@@ -208,8 +208,8 @@ def _modify_post(board_type, post_id):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     # construct a default column that all boards have
-    statement = db.Statement(table_name)\
-        .set(title=title, content=content)\
+    statement = db.Statement(table_name) \
+        .set(title=title, content=content) \
         .where(post_id=post_id, user_id=user_id, status='posted')
 
     # queries for inserting or deleting tags when modified
@@ -251,7 +251,7 @@ def _modify_post(board_type, post_id):
         if not modified:
             return helper.response_err(ER.AUTHENTICATION_FAILED, ER.AUTHENTICATION_FAILED_MSG)
 
-        current_tags = db.Statement(db.table.tags(board_type)).columns('name')\
+        current_tags = db.Statement(db.table.tags(board_type)).columns('name') \
             .where(post_id=post_id).select(connection)
         current_tags = set([tag['name'] for tag in current_tags])
 
@@ -287,8 +287,8 @@ def _delete_post(board_type, post_id):
     if not table_name:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    statement = db.Statement(table_name)\
-        .set(status='deleted')\
+    statement = db.Statement(table_name) \
+        .set(status='deleted') \
         .where(post_id=post_id, user_id=user_id, status='posted')
 
     with db.engine_rdwr.connect() as connection:
@@ -299,4 +299,3 @@ def _delete_post(board_type, post_id):
             return helper.response_err(ER.AUTHENTICATION_FAILED, ER.AUTHENTICATION_FAILED_MSG)
 
         return helper.response_ok({'status': 'success'})
-
