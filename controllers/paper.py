@@ -233,7 +233,7 @@ def _get_paper_file(contract_address):
     web3 = get_web3()
     contract = MuzikaPaperContract(web3, contract_address=contract_address)
 
-    if not contract.purchased(user_address):
+    if not contract.purchased(user_address, {'from': user_address}):
         # if the user hasn't purchased this paper
         return helper.response_err(ER.AUTHENTICATION_FAILED, ER.AUTHENTICATION_FAILED_MSG)
 
