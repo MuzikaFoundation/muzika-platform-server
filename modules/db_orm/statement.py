@@ -134,12 +134,20 @@ class Statement(object):
         return ', '.join(['{} = :set_{}'.format(column, column) for column in kwargs])
 
     @staticmethod
+    def _where_part_condition(column, value):
+        if isinstance(value, list):
+            return '`{}` IN :where_{}'.format(column, column)
+        elif value is None:
+            return '`{}` IS NULL'.format(column)
+        else:
+            return '`{}` = :where_{}'.format(column, column)
+
+    @staticmethod
     def _where_part(**kwargs):
         if len(kwargs) == 0:
             return ''
         else:
-            return ''.join(['WHERE ', ' AND '.join(['`{}` = :where_{}'.format(column, column)
-                                                    if kwargs[column] is not None else '`{}` IS NULL'.format(column)
+            return ''.join(['WHERE ', ' AND '.join([Statement._where_part_condition(column, kwargs[column])
                                                     for column in kwargs])])
 
     @staticmethod
