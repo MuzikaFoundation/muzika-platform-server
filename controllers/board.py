@@ -27,7 +27,7 @@ def _get_board_posts(board_type):
         """
         inner_join = """
             INNER JOIN `papers` `p`
-              ON `p`.`paper_id` = `b`.`paper_id`
+              ON (`p`.`paper_id` = `b`.`paper_id` AND `p`.`contract_address` IS NOT NULL)
         """
     else:
         additional_columns = ''
