@@ -118,7 +118,10 @@ def _post_to_community(board_type):
             file_id=file_id,
             ipfs_file_hash=sheet_music.get('ipfs_file_hash'),
             tx_hash=sheet_music.get('tx_hash'),
-            aes_key=sheet_music.get('aes_key'),
+        )
+
+        paper_private_statement = db.Statement(db.table.PAPERS_PRIVATE).set(
+            aes_key=sheet_music.get('aes_key')
         )
 
         # if parameter is invalid or does not exist
@@ -130,6 +133,7 @@ def _post_to_community(board_type):
         if paper_statement is not None:
             paper_id = paper_statement.insert(connection).lastrowid
             statement.set(paper_id=paper_id)
+            paper_private_statement.set(paper_id=paper_id).insert(connection)
 
         post_id = statement.insert(connection).lastrowid
 

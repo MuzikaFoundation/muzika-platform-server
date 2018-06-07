@@ -10,6 +10,7 @@ class Table:
     SIGN_MESSAGES = 'sign_messages'
     FILES = 'files'
     PAPERS = 'papers'
+    PAPERS_PRIVATE = 'papers_private'
 
     @staticmethod
     def board(board_type):
