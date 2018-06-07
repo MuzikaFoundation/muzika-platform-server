@@ -40,7 +40,8 @@ class MuzikaS3Bucket(object):
         if self.file_type:
             self.config = aws_config['s3'][self.file_type]
 
-    def put(self, connection, name, value, user_id=None, file_type=None, content_type='', hash=None, expired_at=None):
+    def put(self, connection, name, value, user_id=None, file_type=None,
+            content_type='', hash=None, expired_at=None, aes_key=None):
         from time import time
         import os
         import hashlib
@@ -83,7 +84,8 @@ class MuzikaS3Bucket(object):
             file_name=name,
             file_size=file_len,
             hash=file_hash,
-            expired_at=expired_at
+            expired_at=expired_at,
+            aes_key=aes_key
         ).insert(connection).lastrowid
 
         s3 = session.client('s3')
