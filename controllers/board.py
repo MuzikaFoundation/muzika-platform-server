@@ -115,9 +115,10 @@ def _post_to_community(board_type):
         paper_statement = db.Statement(db.table.PAPERS).set(
             user_id=user_id,
             name=sheet_music.get('name'),
-            file_id=sheet_music.get('file_id'),
+            file_id=file_id,
             ipfs_file_hash=sheet_music.get('ipfs_file_hash'),
-            tx_hash=sheet_music.get('tx_hash')
+            tx_hash=sheet_music.get('tx_hash'),
+            aes_key=sheet_music.get('aes_key'),
         )
 
         # if parameter is invalid or does not exist

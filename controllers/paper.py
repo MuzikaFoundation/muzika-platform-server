@@ -107,6 +107,7 @@ def _upload_paper_contract():
         "tx_hash": tx-hash value,
         "name": paper name,
         "file_id": file id (optional),
+        "aes_key": AES Key for decryption,
     }
 
     The background process checks the transaction is mined, and if then, save the contract address. It must checks
@@ -120,8 +121,9 @@ def _upload_paper_contract():
     tx_hash = json_form.get('tx_hash')
     file_id = json_form.get('file_id')
     name = json_form.get('name')
+    aes_key = json_form.get('aes_key')
 
-    statement = db.Statement(db.table.PAPERS).set(user_id=user_id, tx_hash=tx_hash, name=name)
+    statement = db.Statement(db.table.PAPERS).set(user_id=user_id, tx_hash=tx_hash, name=name, aes_key=aes_key)
 
     # When the transaction is mined, so the created contract would have file hash value. If the server and storage
     # (s3 bucket) have the file hash, the background process gets file id from database and update the file id. If
