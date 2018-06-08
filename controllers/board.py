@@ -125,7 +125,7 @@ def _post_to_community(board_type):
         )
 
         # if parameter is invalid or does not exist
-        if not isinstance(file_id, int):
+        if not isinstance(file_id, (int, type(None))):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
         statement.set(file_id=file_id)
 
