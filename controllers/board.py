@@ -114,7 +114,6 @@ def _post_to_community(board_type):
         # Do not use **sheet_music for safety
         paper_statement = db.Statement(db.table.PAPERS).set(
             user_id=user_id,
-            name=sheet_music.get('name'),
             file_id=file_id,
             ipfs_file_hash=sheet_music.get('ipfs_file_hash'),
             tx_hash=sheet_music.get('tx_hash'),
