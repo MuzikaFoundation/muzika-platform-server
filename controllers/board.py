@@ -21,12 +21,12 @@ def _get_board_posts(board_type):
 
     from modules.pagination import Pagination
 
-    if board_type == 'sheet':
+    if board_type == 'music':
         additional_columns = """
-            , '!sheet_music', `p`.*
+            , '!music_files', `p`.*
         """
         inner_join = """
-            INNER JOIN `papers` `p`
+            INNER JOIN `music_files` `p`
               ON (`p`.`paper_id` = `b`.`paper_id` AND `p`.`contract_address` IS NOT NULL)
         """
     else:
@@ -106,21 +106,21 @@ def _post_to_community(board_type):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
         statement.set(genre=genre, youtube_video_id=youtube_video_id)
-    elif board_type == 'sheet':
+    elif board_type == 'music':
         # sheet needs additional columns for file
-        sheet_music = json_form.get('sheet_music')
-        file_id = sheet_music.get('file_id')
+        music_files = json_form.get('music_files')
+        file_id = music_files.get('file_id')
 
-        # Do not use **sheet_music for safety
-        paper_statement = db.Statement(db.table.PAPERS).set(
+        # Do not use **music_files for safety
+        paper_statement = db.Statement(db.table.MUSIC_FILES).set(
             user_id=user_id,
             file_id=file_id,
-            ipfs_file_hash=sheet_music.get('ipfs_file_hash'),
-            tx_hash=sheet_music.get('tx_hash'),
+            ipfs_file_hash=music_files.get('ipfs_file_hash'),
+            tx_hash=music_files.get('tx_hash'),
         )
 
-        paper_private_statement = db.Statement(db.table.PAPERS_PRIVATE).set(
-            aes_key=sheet_music.get('aes_key')
+        paper_private_statement = db.Statement(db.table.MUSIC_FILES_PRIVATE).set(
+            aes_key=music_files.get('aes_key')
         )
 
         # if parameter is invalid or does not exist
@@ -152,12 +152,12 @@ def _get_community_post(board_type, post_id):
     if not table_name:
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-    if board_type == 'sheet':
+    if board_type == 'music':
         additional_columns = """
-            , '!sheet_music', `p`.*
+            , '!music_files', `p`.*
         """
         inner_join = """
-            LEFT JOIN `papers` `p`
+            LEFT JOIN `music_files` `p`
             ON (`p`.`paper_id` = `b`.`paper_id`)
         """
     else:
@@ -239,7 +239,7 @@ def _modify_post(board_type, post_id):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
         statement.set(youtube_video_id=youtube_video_id, genre=genre)
-    elif board_type == 'sheet':
+    elif board_type == 'music':
         # sheet needs additional columns for file
         file_id = json_form.get('file_id')
 

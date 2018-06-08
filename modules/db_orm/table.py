@@ -1,7 +1,7 @@
 BOARD_TYPE_LIST = (
     'community',
     'video',
-    'sheet',
+    'music',
 )
 
 
@@ -9,8 +9,8 @@ class Table:
     USERS = 'users'
     SIGN_MESSAGES = 'sign_messages'
     FILES = 'files'
-    PAPERS = 'papers'
-    PAPERS_PRIVATE = 'papers_private'
+    MUSIC_FILES = 'music_files'
+    MUSIC_FILES_PRIVATE = 'music_files_private'
 
     @staticmethod
     def board(board_type):

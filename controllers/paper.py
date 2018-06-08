@@ -32,13 +32,13 @@ def _get_paper_contracts():
         return helper.response_err(ER.INVALID_REQUEST, ER.INVALID_REQUEST_BODY)
 
     paper_statement = """
-        SELECT `p`.*, '!user', `u`.* FROM `papers` `p`
+        SELECT `p`.*, '!user', `u`.* FROM `music_files` `p`
         LEFT JOIN `users` `u`
         ON (`p`.`user_id` = `u`.`user_id`)
         WHERE `contract_address` IS NOT NULL
     """
     count_statement  = """
-        SELECT COUNT(*) AS `cnt` FROM `papers`
+        SELECT COUNT(*) AS `cnt` FROM `music_files`
         WHERE `contract_address` IS NOT NULL
     """
     order_statement = """
@@ -70,13 +70,13 @@ def _get_my_paper_contracts():
         return helper.response_err(ER.INVALID_REQUEST, ER.INVALID_REQUEST_BODY)
 
     paper_statement = """
-            SELECT `p`.*, '!user', `u`.* FROM `papers` `p`
+            SELECT `p`.*, '!user', `u`.* FROM `music_files` `p`
             LEFT JOIN `users` `u`
             ON (`p`.`user_id` = `u`.`user_id`)
             WHERE `p`.`user_id` = :user_id 
         """
     count_statement = """
-            SELECT COUNT(*) AS `cnt` FROM `papers`
+            SELECT COUNT(*) AS `cnt` FROM `music_files`
             WHERE `user_id` = :user_id
         """
     order_statement = """
@@ -123,7 +123,7 @@ def _upload_paper_contract():
     name = json_form.get('name')
     aes_key = json_form.get('aes_key')
 
-    statement = db.Statement(db.table.PAPERS).set(user_id=user_id, tx_hash=tx_hash, name=name, aes_key=aes_key)
+    statement = db.Statement(db.table.MUSIC_FILES).set(user_id=user_id, tx_hash=tx_hash, name=name, aes_key=aes_key)
 
     # When the transaction is mined, so the created contract would have file hash value. If the server and storage
     # (s3 bucket) have the file hash, the background process gets file id from database and update the file id. If
@@ -189,7 +189,7 @@ def _get_paper_contract(contract_address):
     Gets the paper contract information.
     """
     paper_contract_statement = """
-        SELECT `p`.*, '!user', `u`.* FROM `papers` `p`
+        SELECT `p`.*, '!user', `u`.* FROM `music_files` `p`
         LEFT JOIN `users` `u`
           ON (`u`.`user_id` = `p`.`user_id`)
         WHERE `contract_address` = :contract_address
@@ -239,7 +239,7 @@ def _get_paper_file(contract_address):
         # if the user hasn't purchased this paper
         return helper.response_err(ER.AUTHENTICATION_FAILED, ER.AUTHENTICATION_FAILED_MSG)
 
-    paper_statement = db.Statement(db.table.PAPERS).where(contract_address=contract_address).limit(1)
+    paper_statement = db.Statement(db.table.MUSIC_FILES).where(contract_address=contract_address).limit(1)
 
     with db.engine_rdonly.connect() as connection:
         paper = db.to_relation_model(paper_statement.select(connection).fetchone())

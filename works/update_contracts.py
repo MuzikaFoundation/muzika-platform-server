@@ -12,7 +12,7 @@ def update_contracts():
     delete_query_statement = """
         DELETE FROM `{}`
         WHERE `contract_address` IS NULL AND `created_at` < NOW() - :expired_time
-    """.format(db.table.PAPERS)
+    """.format(db.table.MUSIC_FILES)
 
     with db.engine_rdwr.connect() as connection:
         # DELETE contracts that are not mined over specific time
@@ -20,7 +20,7 @@ def update_contracts():
 
         # UPDATE contracts if they are mined
         contracts = db.to_relation_model_list(
-            db.Statement(db.table.PAPERS).where(contract_address=None).select(connection)
+            db.Statement(db.table.MUSIC_FILES).where(contract_address=None).select(connection)
         )
 
         for contract in contracts:
@@ -31,7 +31,7 @@ def update_contracts():
 
             # if mined, update it
             if tx:
-                db.Statement(db.table.PAPERS)\
+                db.Statement(db.table.MUSIC_FILES)\
                     .set(contract_address=tx['contractAddress'])\
                     .where(paper_id=contract['paper_id'])\
                     .update(connection)
