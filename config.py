@@ -23,8 +23,8 @@ class IPFSConfig:
     (the file path may be ~/.ipfs/config).
     reference : https://github.com/ipfs/js-ipfs/tree/master/examples/circuit-relaying
     """
-    node_address = '52.78.36.21'
-    port = 4001
+    node_address = 'localhost'
+    port = 5001
 
 
 class Web3ProviderConfig:
