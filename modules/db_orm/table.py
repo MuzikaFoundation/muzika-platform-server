@@ -12,6 +12,9 @@ class Table:
     MUSIC_FILES = 'music_files'
     MUSIC_FILES_PRIVATE = 'music_files_private'
 
+    IPFS_FILES = 'ipfs_files'
+    IPFS_FILES_PRIVATE = 'ipfs_files_private'
+
     @staticmethod
     def board(board_type):
         if board_type not in BOARD_TYPE_LIST:
