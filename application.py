@@ -66,8 +66,17 @@ if env == 'production':
         application.register_blueprint(blueprint)
 
 if __name__ == '__main__':
-    application.run(
-        host=WebServerConfig.host,
-        port=WebServerConfig.port,
-        threaded=True
-    )
+    # execute celery process
+    import subprocess
+    celery_process = subprocess.Popen(['celery', '-A', 'tasks', 'worker', '--loglevel=info'])
+
+    try:
+        application.run(
+            host=WebServerConfig.host,
+            port=WebServerConfig.port,
+            threaded=True
+        )
+    except Exception as e:
+        print(e)
+    finally:
+        celery_process.kill()

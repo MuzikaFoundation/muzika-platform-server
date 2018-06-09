@@ -14,3 +14,4 @@ venv
 /secret/*
 !/secret/.gitkeep
 /dist.zip
+/*.sqlite
