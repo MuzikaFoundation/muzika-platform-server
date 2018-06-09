@@ -68,7 +68,9 @@ if env == 'production':
 if __name__ == '__main__':
     # execute celery process
     import subprocess
-    celery_process = subprocess.Popen(['celery', '-A', 'tasks', 'worker', '--loglevel=info'])
+    celery_env = os.environ.copy()
+    celery_env['PYTHONPATH'] = os.path.dirname(os.path.abspath(__file__))
+    celery_process = subprocess.Popen(['celery', '-A', 'tasks', 'worker', '--loglevel=info'], env=celery_env)
 
     try:
         application.run(
