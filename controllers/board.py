@@ -1,7 +1,9 @@
 from flask import Blueprint, request
 from sqlalchemy import text
 
+import tasks
 from modules import database as db
+from modules import ipfs
 from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
@@ -23,23 +25,25 @@ def _get_board_posts(board_type):
 
     if board_type == 'music':
         additional_columns = """
-            , '!music_files', `p`.*
-        """
+            , '!{}', `p`.*, '!{}', `if`.*
+        """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
         inner_join = """
-            INNER JOIN `music_files` `p`
-              ON (`p`.`paper_id` = `b`.`paper_id` AND `p`.`contract_address` IS NOT NULL)
-        """
+            INNER JOIN `{}` `p`
+              ON (`p`.`contract_id` = `b`.`contract_id` AND `p`.`contract_address` IS NOT NULL)
+            INNER JOIN `{}` `if`
+              ON (`if`.`file_id` = `p`.`ipfs_file_id`)
+        """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
     else:
         additional_columns = ''
         inner_join = ''
 
-    inner_join = "INNER JOIN `users` `u` ON (`u`.`user_id` = `b`.`user_id`)" + inner_join
+    inner_join = "INNER JOIN `{}` `u` ON (`u`.`user_id` = `b`.`user_id`)".format(db.table.USERS) + inner_join
 
     fetch_query_str = """
         SELECT `b`.*, '!author', `u`.* {}
         FROM `{}` `b` 
         {}
-        WHERE `status` = :status
+        WHERE `b`.`status` = :status
     """.format(additional_columns, table_name, inner_join)
 
     count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}` `b` {} WHERE `b`.`status` = :status".format(table_name,
@@ -90,8 +94,8 @@ def _post_to_community(board_type):
             VALUES(:post_id, :tag_name)
     """.format(db.table.tags(board_type))
 
-    statement = db.Statement(table_name).set(user_id=user_id, title=title, content=content)
-    paper_statement = None
+    post_statement = db.Statement(table_name).set(user_id=user_id, title=title, content=content)
+    contract_statement = None
 
     if board_type == 'community':
         # community needs no additional columns
@@ -105,36 +109,35 @@ def _post_to_community(board_type):
         if not isinstance(genre, str) or not isinstance(youtube_video_id, str):
             return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
-        statement.set(genre=genre, youtube_video_id=youtube_video_id)
+        post_statement.set(genre=genre, youtube_video_id=youtube_video_id)
     elif board_type == 'music':
-        # sheet needs additional columns for file
-        music_files = json_form.get('music_files')
-        file_id = music_files.get('file_id')
-
-        # Do not use **music_files for safety
-        paper_statement = db.Statement(db.table.MUSIC_FILES).set(
-            user_id=user_id,
-            file_id=file_id,
-            ipfs_file_hash=music_files.get('ipfs_file_hash'),
-            tx_hash=music_files.get('tx_hash'),
-        )
-
-        paper_private_statement = db.Statement(db.table.MUSIC_FILES_PRIVATE).set(
-            aes_key=music_files.get('aes_key')
-        )
-
-        # if parameter is invalid or does not exist
-        if not isinstance(file_id, (int, type(None))):
-            return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
-        statement.set(file_id=file_id)
+        pass
 
     with db.engine_rdwr.connect() as connection:
-        if paper_statement is not None:
-            paper_id = paper_statement.insert(connection).lastrowid
-            statement.set(paper_id=paper_id)
-            paper_private_statement.set(paper_id=paper_id).insert(connection)
+        if board_type == 'music':
+            # if the board type is music, register IPFS files and contracts
+            music_files = json_form.get('music_files')
+            ipfs_file_id = ipfs.register_object(
+                connection=connection,
+                ipfs_hash=music_files.get('ipfs_file_hash'),
+                file_type=music_files.get('file_type', 'music'),
+                aes_key=music_files.get('aes_key')
+            )
 
-        post_id = statement.insert(connection).lastrowid
+            # update IPFS file info later
+            tasks.ipfs_objects_update.delay(ipfs_file_id)
+
+            contract_statement = db.Statement(db.table.MUSIC_CONTRACTS).set(
+                user_id=user_id,
+                ipfs_file_id=ipfs_file_id,
+                tx_hash=music_files.get('tx_hash')
+            )
+
+        if contract_statement is not None:
+            contract_id = contract_statement.insert(connection).lastrowid
+            post_statement.set(contract_id=contract_id)
+
+        post_id = post_statement.insert(connection).lastrowid
 
         # if tags exist, insert tags
         if tags:
@@ -153,13 +156,16 @@ def _get_community_post(board_type, post_id):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
     if board_type == 'music':
+        # if board type is music, show with related music contracts and IPFS file.
         additional_columns = """
-            , '!music_files', `p`.*
-        """
+            , '!{}', `mc`.*, '!{}', `if`.*
+        """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
         inner_join = """
-            LEFT JOIN `music_files` `p`
-            ON (`p`.`paper_id` = `b`.`paper_id`)
-        """
+            LEFT JOIN `{}` `mc`
+              ON (`mc`.`contract_id` = `b`.`contract_id`)
+            LEFT JOIN `{}` `if`
+              ON (`mc`.`ipfs_file_id` = `if`.`file_id`)
+        """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
     else:
         additional_columns = ''
         inner_join = ''
@@ -167,7 +173,7 @@ def _get_community_post(board_type, post_id):
     post_query_str = """
         SELECT `b`.* {} FROM `{}` `b`
         {}
-        WHERE `post_id` = :post_id AND status = :status
+        WHERE `post_id` = :post_id AND `b`.`status` = :status
     """.format(additional_columns, table_name, inner_join)
 
     tags_statement = db.Statement(db.table.tags(board_type)).columns('name').where(post_id=post_id)
@@ -240,13 +246,8 @@ def _modify_post(board_type, post_id):
 
         statement.set(youtube_video_id=youtube_video_id, genre=genre)
     elif board_type == 'music':
-        # sheet needs additional columns for file
-        file_id = json_form.get('file_id')
-
-        if not isinstance(file_id, int):
-            return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
-
-        statement.set(file_id=file_id)
+        # music post cannot change IPFS files since it already posted on the network.
+        pass
 
     with db.engine_rdwr.connect() as connection:
         modified = statement.update(connection).rowcount
