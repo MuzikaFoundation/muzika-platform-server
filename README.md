@@ -50,7 +50,7 @@ $ ipfs daemon
 
 ### Compile solidity codes
 
-Compile solidity codes for generating contracts. The
+Compile solidity codes for generating contracts.
 
 ```
 $ cd muzika-contract

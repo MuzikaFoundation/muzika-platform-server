@@ -25,13 +25,13 @@ def _get_board_posts(board_type):
 
     if board_type == 'music':
         additional_columns = """
-            , '!{}', `p`.*, '!{}', `if`.*
-        """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
+            , '!music_contract', `mc`.*, '!ipfs_file', `if`.*
+        """
         inner_join = """
-            INNER JOIN `{}` `p`
-              ON (`p`.`contract_id` = `b`.`contract_id` AND `p`.`contract_address` IS NOT NULL)
+            INNER JOIN `{}` `mc`
+              ON (`mc`.`contract_id` = `b`.`contract_id` AND `mc`.`contract_address` IS NOT NULL)
             INNER JOIN `{}` `if`
-              ON (`if`.`file_id` = `p`.`ipfs_file_id`)
+              ON (`if`.`file_id` = `mc`.`ipfs_file_id`)
         """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
     else:
         additional_columns = ''
@@ -158,8 +158,8 @@ def _get_community_post(board_type, post_id):
     if board_type == 'music':
         # if board type is music, show with related music contracts and IPFS file.
         additional_columns = """
-            , '!{}', `mc`.*, '!{}', `if`.*
-        """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
+            , '!music_contract', `mc`.*, '!ipfs_file', `if`.*
+        """
         inner_join = """
             LEFT JOIN `{}` `mc`
               ON (`mc`.`contract_id` = `b`.`contract_id`)
