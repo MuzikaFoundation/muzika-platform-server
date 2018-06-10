@@ -20,7 +20,7 @@ jwt_json = load_secret_json('jwt')
 JWT_SECRET_KEY = jwt_json['jwt_secret_key']
 
 
-PLATFORM_TYPES = ['electron', 'app']
+PLATFORM_TYPES = ['electron', 'app', 'web']
 
 
 def generate_jwt_token(connection, web3, address, signature, **kwargs):
