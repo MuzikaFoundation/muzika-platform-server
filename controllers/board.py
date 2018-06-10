@@ -116,12 +116,12 @@ def _post_to_community(board_type):
     with db.engine_rdwr.connect() as connection:
         if board_type == 'music':
             # if the board type is music, register IPFS files and contracts
-            music_files = json_form.get('music_files')
+            music_contracts = json_form.get('music_contracts')
             ipfs_file_id = ipfs.register_object(
                 connection=connection,
-                ipfs_hash=music_files.get('ipfs_file_hash'),
-                file_type=music_files.get('file_type', 'music'),
-                aes_key=music_files.get('aes_key')
+                ipfs_hash=music_contracts.get('ipfs_file_hash'),
+                file_type=music_contracts.get('file_type', 'music'),
+                aes_key=music_contracts.get('aes_key')
             )
 
             # update IPFS file info later
@@ -130,7 +130,7 @@ def _post_to_community(board_type):
             contract_statement = db.Statement(db.table.MUSIC_CONTRACTS).set(
                 user_id=user_id,
                 ipfs_file_id=ipfs_file_id,
-                tx_hash=music_files.get('tx_hash')
+                tx_hash=music_contracts.get('tx_hash')
             )
 
         if contract_statement is not None:
