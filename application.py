@@ -68,10 +68,26 @@ if env == 'production':
 if __name__ == '__main__':
     # execute celery process
     import subprocess
-    celery_env = os.environ.copy()
-    celery_env['PYTHONPATH'] = os.path.dirname(os.path.abspath(__file__))
-    celery_process = subprocess.Popen(['celery', '-A', 'tasks', 'worker', '--loglevel=info'], env=celery_env)
+    import argparse
 
+    args = argparse.ArgumentParser()
+    args.add_argument('-b', '--beat', help='Do periodical tasks.', default=False, action='store_true')
+
+    args = args.parse_args()
+
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # run celery for periodical or asynchronous tasks.
+    # the application runs celery only in local, so need to run separately in production or stage environment.
+    celery_env = os.environ.copy()
+    celery_env['PYTHONPATH'] = current_directory
+    celery_process_params = ['celery', '-A', 'tasks', 'worker', '--loglevel=info']
+    if args.beat:
+        celery_process_params.append('-B')
+
+    celery_process = subprocess.Popen(celery_process_params, env=celery_env)
+
+    # run web application
     try:
         application.run(
             host=WebServerConfig.host,
@@ -81,4 +97,8 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
     finally:
+        # before exit, kill celery process and remove its files.
         celery_process.kill()
+        os.remove(os.path.join(current_directory, 'celery.sqlite'))
+        if args.beat:
+            os.remove(os.path.join(current_directory, 'celerybeat-schedule.db'))

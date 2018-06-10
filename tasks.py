@@ -13,8 +13,23 @@ else:
     app = Celery('tasks', backend='db+sqlite:///celery.sqlite', broker='sqla+sqlite:///celery.sqlite')
 
 
+@app.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    """
+    Registers periodical tasks.
+    """
+    from config import MuzikaContractConfig
+    sender.add_periodic_task(MuzikaContractConfig.update_period, update_contracts.s(), name='update_contracts')
+
+
 @app.task(bind=True, max_retries=3)
 def ipfs_objects_update(self, ipfs_file_id):
     from modules.ipfs import track_object
     with db.engine_rdwr.connect() as connection:
         track_object(connection, ipfs_file_id=ipfs_file_id)
+
+
+@app.task(bind=True)
+def update_contracts(self):
+    from works.update_contracts import update_contracts
+    update_contracts()
