@@ -36,5 +36,5 @@ def update_contracts():
             if tx:
                 db.Statement(db.table.MUSIC_CONTRACTS)\
                     .set(contract_address=tx['contractAddress'])\
-                    .where(paper_id=contract['contract_id'])\
+                    .where(contract_id=contract['contract_id'])\
                     .update(connection)
