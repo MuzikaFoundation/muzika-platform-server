@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 from config import WebServerConfig
 from controllers import (
-    paper, user, file, board, comment, like, seed
+    music_contract, user, file, board, comment, like, seed
 )
 from controllers.test import (
     paper_test
@@ -19,7 +19,7 @@ application.json_encoder = FlaskJSONEncoder
 
 blueprints = [
     # define blueprints for both production and development
-    paper.blueprint,
+    music_contract.blueprint,
     user.blueprint,
     file.blueprint,
     board.blueprint,
