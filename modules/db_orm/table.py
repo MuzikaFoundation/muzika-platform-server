@@ -9,8 +9,6 @@ class Table:
     USERS = 'users'
     SIGN_MESSAGES = 'sign_messages'
     FILES = 'files'
-    MUSIC_FILES = 'music_files'
-    MUSIC_FILES_PRIVATE = 'music_files_private'
 
     MUSIC_CONTRACTS = 'music_contracts'
     MUSIC_PAYMENTS = 'music_payments'
