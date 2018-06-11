@@ -114,6 +114,8 @@ def _post_to_community(board_type):
         pass
 
     with db.engine_rdwr.connect() as connection:
+        post_id = post_statement.insert(connection).lastrowid
+
         if board_type == 'music':
             music_contract = json_form.get('music_contract')
             tx_hash = music_contract.get('tx_hash')
@@ -137,16 +139,13 @@ def _post_to_community(board_type):
             tasks.ipfs_objects_update.delay(ipfs_file_id)
 
             contract_statement = db.Statement(db.table.MUSIC_CONTRACTS).set(
-                user_id=user_id,
                 ipfs_file_id=ipfs_file_id,
-                tx_hash=tx_hash
+                tx_hash=tx_hash,
+                post_id=post_id
             )
 
         if contract_statement is not None:
             contract_id = contract_statement.insert(connection).lastrowid
-            post_statement.set(contract_id=contract_id)
-
-        post_id = post_statement.insert(connection).lastrowid
 
         # if tags exist, insert tags
         if tags:
