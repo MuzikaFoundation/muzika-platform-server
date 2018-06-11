@@ -47,6 +47,7 @@ class MuzikaContractConfig:
 
     # The registered transactions are removed from the database if they are not mined over specific time.
     mining_expired_seconds = 3 * 60 * 60
+    # @TODO Set long period on test/main network
     update_period = 10
 
 

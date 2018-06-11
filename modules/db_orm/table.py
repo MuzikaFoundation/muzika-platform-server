@@ -13,6 +13,7 @@ class Table:
     MUSIC_FILES_PRIVATE = 'music_files_private'
 
     MUSIC_CONTRACTS = 'music_contracts'
+    MUSIC_PAYMENTS = 'music_payments'
 
     IPFS_FILES = 'ipfs_files'
     IPFS_FILES_PRIVATE = 'ipfs_files_private'
