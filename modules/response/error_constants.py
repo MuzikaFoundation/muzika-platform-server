@@ -20,3 +20,6 @@ ALREADY_EXIST_MSG = "Already exists."
 
 UPLOAD_FAIL = 406
 UPLOAD_FAIL_MSG = "Failed to upload the file."
+
+TX_HASH_DUPLICATED = 407
+TX_HASH_DUPLICATED_MSG = "tx hash already exists"

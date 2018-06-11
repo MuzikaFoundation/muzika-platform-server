@@ -11,15 +11,22 @@ def update_contracts():
 
     # query for deleting music contracts and their IPFS files list if not mined
     delete_query_statement = """
-        DELETE `mc`, `if` FROM `{}` `mc`
-        INNER JOIN `{}` `if`
-          ON (`if`.`file_id` = `mc`.`ipfs_file_id` OR `if`.`parent_id` = `mc`.`ipfs_file_id`)
-        WHERE `contract_address` IS NULL AND `mc`.`created_at` < NOW() - :expired_time
-    """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
+        UPDATE `{}` `mb`
+        INNER JOIN `{}` `mc`
+          ON (`mb`.`contract_id` = `mc`.`contract_id`)
+        SET
+          `mb`.`status` = :set_status,
+          `mc`.`status` = :set_status
+        WHERE
+          `mc`.`status` = :delete_status AND `mc`.`created_at` < NOW() - :expired_time
+    """.format(db.table.board('music'), db.table.MUSIC_CONTRACTS)
 
     with db.engine_rdwr.connect() as connection:
         # DELETE contracts that are not mined over specific time
-        connection.execute(text(delete_query_statement), expired_time=MuzikaContractConfig.mining_expired_seconds)
+        connection.execute(text(delete_query_statement),
+                           set_status='deleted',
+                           delete_status='untracked',
+                           expired_time=MuzikaContractConfig.mining_expired_seconds)
 
         # UPDATE contracts if they are mined
         contracts = db.to_relation_model_list(
@@ -35,6 +42,6 @@ def update_contracts():
             # if mined, update it
             if tx:
                 db.Statement(db.table.MUSIC_CONTRACTS)\
-                    .set(contract_address=tx['contractAddress'])\
+                    .set(contract_address=tx['contractAddress'], status='tracked')\
                     .where(contract_id=contract['contract_id'])\
                     .update(connection)
