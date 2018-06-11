@@ -29,7 +29,7 @@ def update_payments():
         UPDATE `{}` SET `status` = 'disabled'
         WHERE
             `status` = 'pending'
-        AND `created_at` < NOW() - :expired_time
+        AND `created_at` < NOW() - INTERVAL 3 HOUR
     """.format(db.table.MUSIC_PAYMENTS)
 
     # query for deleting timeout transaction
@@ -37,7 +37,7 @@ def update_payments():
         DELETE FROM `{}`
         WHERE
             `status` = 'disabled'
-        AND `created_at` < NOW() - :expired_time
+        AND `created_at` < NOW() - INTERVAL 6 HOUR
     """.format(db.table.MUSIC_PAYMENTS)
 
     with db.engine_rdwr.connect() as connection:
@@ -120,7 +120,7 @@ def update_payments():
                 .update(connection)
 
         # execute update query
-        connection.execute(text(update_query_statement), expired_time=MuzikaContractConfig.mining_expired_seconds)
+        connection.execute(text(update_query_statement))
 
         # execute delete query (timeout is doubled)
-        connection.execute(text(delete_query_statement), expired_time=2 * MuzikaContractConfig.mining_expired_seconds)
+        connection.execute(text(delete_query_statement))
