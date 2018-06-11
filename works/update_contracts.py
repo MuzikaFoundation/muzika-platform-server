@@ -38,12 +38,12 @@ def update_contracts():
         # DELETE contracts that are not mined over specific time
         connection.execute(text(delete_query_statement),
                            set_status='deleted',
-                           delete_status='untracked',
+                           delete_status='pending',
                            expired_time=MuzikaContractConfig.mining_expired_seconds)
 
         # QUERY not mined contracts
         contracts = db.to_relation_model_list(
-            connection.execute(text(transaction_query_statement), track_status='untracked')
+            connection.execute(text(transaction_query_statement), track_status='pending')
         )
 
         for contract in contracts:
@@ -53,8 +53,9 @@ def update_contracts():
                 # if failed to get contract (not mined or fake transaction), check next contract
                 continue
 
-            # get contract
             if tx:
+                # TODO : validate the contract
+
                 contract_address = tx['contractAddress']
                 tx_contract = MuzikaPaperContract(web3, contract_address=contract_address)
                 seller_address = tx_contract.get_seller()
@@ -69,6 +70,6 @@ def update_contracts():
                         .update(connection)
 
                 db.Statement(db.table.MUSIC_CONTRACTS)\
-                    .set(contract_address=contract_address, seller_address=seller_address, status='tracked')\
+                    .set(contract_address=contract_address, seller_address=seller_address, status='success')\
                     .where(contract_id=contract['contract_id'])\
                     .update(connection)

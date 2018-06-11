@@ -60,7 +60,7 @@ def _get_paper_file(contract_address):
     with db.engine_rdonly.connect() as connection:
         key_query = connection.execute(text(key_query_statement),
                                        contract_address=contract_address,
-                                       contract_status='tracked').fetchone()
+                                       contract_status='success').fetchone()
 
         # if the contract is not registered in the server or does not have IPFS file
         if not key_query:

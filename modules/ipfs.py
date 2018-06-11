@@ -24,7 +24,7 @@ def register_object(connection, ipfs_hash, file_type, aes_key=None, name=None, t
         'ipfs_hash': ipfs_hash,
         'encrypted': True if aes_key else False,
         'name': name,
-        'status': 'untracked'
+        'status': 'pending'
     }
 
     ipfs_file_id = db.Statement(db.table.IPFS_FILES).set(
@@ -32,7 +32,7 @@ def register_object(connection, ipfs_hash, file_type, aes_key=None, name=None, t
         ipfs_hash=ipfs_hash,
         encrypted=True if aes_key else False,
         name=name,
-        status='untracked'
+        status='pending'
     ).insert(connection).lastrowid
 
     # if encrypted, add AES key to the private table
@@ -96,14 +96,14 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
     # if no object links, this object is just a file
     if not len(object_links):
         db.Statement(db.table.IPFS_FILES)\
-            .set(ipfs_object_type='file', status='tracked')\
+            .set(ipfs_object_type='file', status='success')\
             .where(file_id=ipfs_file_id)\
             .update(connection)
 
     # if having object links, this object is a directory and insert files
     else:
         db.Statement(db.table.IPFS_FILES)\
-            .set(ipfs_object_type='directory', name=name if name else '/', status='tracked')\
+            .set(ipfs_object_type='directory', name=name if name else '/', status='success')\
             .where(file_id=ipfs_file_id)\
             .update(connection)
 
@@ -120,7 +120,7 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
             if link['Type'] == 1:
                 link_object.update({
                     'ipfs_object_type': 'directory',
-                    'status': 'untracked'
+                    'status': 'pending'
                 })
 
                 # track recursively
@@ -130,7 +130,7 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
             else:
                 link_object.update({
                     'ipfs_object_type': 'file',
-                    'status': 'tracked'
+                    'status': 'success'
                 })
 
                 # db.Statement(db.table.IPFS_FILES).set(**link_object).insert(connection)
