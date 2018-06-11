@@ -29,6 +29,9 @@ def _get_user(address):
     if not check_address_format(address):
         return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
 
+    web3 = get_web3()
+    web3.toChecksumAddress(address)
+
     with db.engine_rdonly.connect() as connection:
         user = db.statement(db.table.USERS).where(address=address).select(connection).fetchone()
         return helper.response_ok(db.to_relation_model(user))
