@@ -28,6 +28,7 @@ class MuzikaContractHandler:
     helps to create contracts for muzika.
     """
     __muzika_contract_interface__ = {
+        'Dispatcher': load_contract('Dispatcher'),
         'MuzikaPaperContract': load_contract('MuzikaPaperContract'),
         'MuzikaCoin': load_contract('MuzikaCoin'),
     }
@@ -63,6 +64,9 @@ class MuzikaContractHandler:
         Returns a contract.
         """
         return web3.eth.contract(**self.get_contract_parameter(contract_name, address=address))
+
+    def get_bytecode(self, contract_name):
+        return self.get_interface(contract_name)['bytecode']
 
 
 class MuzikaContract(object):
