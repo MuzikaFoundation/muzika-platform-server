@@ -46,6 +46,7 @@ class MuzikaContractConfig:
     build_path = './muzika-contract/build/contracts'
 
     # The registered transactions are removed from the database if they are not mined over specific time.
+    # @TODO Set long period on test/main network
     update_period = 10
 
 

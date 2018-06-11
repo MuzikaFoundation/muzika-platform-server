@@ -20,6 +20,7 @@ def setup_periodic_tasks(sender, **kwargs):
     """
     from config import MuzikaContractConfig
     sender.add_periodic_task(MuzikaContractConfig.update_period, update_contracts.s(), name='update_contracts')
+    sender.add_periodic_task(MuzikaContractConfig.update_period, update_payments.s(), name='update_payments')
 
 
 @app.task(bind=True, max_retries=3)
@@ -33,3 +34,9 @@ def ipfs_objects_update(self, ipfs_file_id):
 def update_contracts(self):
     from works.update_contracts import update_contracts
     update_contracts()
+
+
+@app.task(bind=True)
+def update_payments(self):
+    from works.update_payments import update_payments
+    update_payments()

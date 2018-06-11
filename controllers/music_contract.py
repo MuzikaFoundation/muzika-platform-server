@@ -8,6 +8,7 @@ from modules.login import jwt_check
 from modules.response import error_constants as ER
 from modules.response import helper
 from modules.web3 import get_web3
+from modules.utils import txhash_validation
 
 blueprint = Blueprint('music_contract', __name__, url_prefix='/api')
 
@@ -79,3 +80,29 @@ def _get_paper_file(contract_address):
             cipher = PKCS1_OAEP.new(public_key)
             encrypted_aes_key = cipher.encrypt(aes_key)
             return helper.response_ok({'key': encrypted_aes_key})
+
+
+@blueprint.route('/music/purchase', methods=['POST'])
+@jwt_check
+def _post_music_purchase():
+    """
+    Receive txHash from client. This hash is about music purchase.
+    For simplify and security, only accept txHash (any of other extra information is not received)
+    That is, no contract address and price are given. (After mined, automatically saved the information)
+    See works/update_payments.py
+    """
+    json_form = request.get_json(force=True, silent=True)
+    tx_hash = json_form.get('tx_hash')
+    requester = request.user['address']
+
+    if not txhash_validation(tx_hash):
+        return helper.response_err(ER.INVALID_TX_HASH, ER.INVALID_TX_HASH_MSG)
+
+    with db.engine_rdonly.connect() as connection:
+        payment_id = db.statement(db.table.MUSIC_PAYMENTS).set(
+            # Set to lowercase
+            tx_hash=tx_hash.lower(),
+            requester=requester
+        ).insert(connection).lastrowid
+
+    return helper.response_ok({'payment_id': payment_id, 'tx_hash': tx_hash})
