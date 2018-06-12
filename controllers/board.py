@@ -181,7 +181,7 @@ def _get_community_post(board_type, post_id):
     post_query_str = """
         SELECT `b`.* {} FROM `{}` `b`
         {}
-        WHERE `post_id` = :post_id AND `b`.`status` = :status
+        WHERE `b`.`post_id` = :post_id AND `b`.`status` = :status
     """.format(additional_columns, table_name, inner_join)
 
     tags_statement = db.Statement(db.table.tags(board_type)).columns('name').where(post_id=post_id)
