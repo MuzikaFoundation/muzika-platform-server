@@ -48,7 +48,7 @@ def _get_board_posts(board_type):
 
     count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}` `b` {} WHERE `b`.`status` = :status".format(table_name,
                                                                                                       inner_join)
-    order_query_str = "ORDER BY `post_id` DESC"
+    order_query_str = "ORDER BY `b`.`post_id` DESC"
 
     with db.engine_rdonly.connect() as connection:
         return helper.response_ok(Pagination(
