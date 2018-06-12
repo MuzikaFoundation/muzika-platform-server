@@ -74,6 +74,7 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
     file_type = ipfs_object['file_type']
     aes_key = ipfs_object.get('aes_key')
     name = ipfs_object.get('name', '')
+    root_id = kwargs.get('root_id') or ipfs_file_id
 
     if name == '/' or name is None:
         name = ''
@@ -96,14 +97,14 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
     # if no object links, this object is just a file
     if not len(object_links):
         db.Statement(db.table.IPFS_FILES)\
-            .set(ipfs_object_type='file', status='success')\
+            .set(ipfs_object_type='file', root_id=root_id, status='success')\
             .where(file_id=ipfs_file_id)\
             .update(connection)
 
     # if having object links, this object is a directory and insert files
     else:
         db.Statement(db.table.IPFS_FILES)\
-            .set(ipfs_object_type='directory', name=name if name else '/', status='success')\
+            .set(ipfs_object_type='directory', root_id=root_id, name=name if name else '/', status='success')\
             .where(file_id=ipfs_file_id)\
             .update(connection)
 
@@ -114,6 +115,7 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
                 'ipfs_hash': link['Hash'],
                 'encrypted': True if aes_key else False,
                 'name': '/'.join([name, link['Name']]),
+                'root_id': root_id
             }
 
             # if the linked object is directory
@@ -149,4 +151,4 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
 
             # if directory, track recursively
             if link['Type'] == 1:
-                track_object(connection, ipfs_object=link_object, **kwargs)
+                track_object(connection, ipfs_object=link_object, root_id=root_id, **kwargs)
