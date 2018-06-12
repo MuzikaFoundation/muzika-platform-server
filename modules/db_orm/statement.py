@@ -154,7 +154,7 @@ class Statement(object):
     def _order_part(*args):
         if len(args) == 0:
             return ''
-        return 'ORDER {}'.format(', '.join(['{} {}'.format(row['column'], row['order']) for row in args]))
+        return 'ORDER BY {}'.format(', '.join(['{} {}'.format(row['column'], row['order']) for row in args]))
 
     @staticmethod
     def _limit_part(limit_cnt):
