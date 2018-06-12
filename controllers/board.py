@@ -24,12 +24,14 @@ def _get_board_posts(board_type):
     from modules.pagination import Pagination
 
     if board_type == 'music':
+        # If the board type is music, only returns the root IPFS file hash, not recursively since the contract and
+        # IPFS files are 1:N relationship, but if only returning the root IPFS file, it can be 1:1 relationship.
         additional_columns = """
             , '!music_contract', `mc`.*, '!ipfs_file', `if`.*
         """
         inner_join = """
             INNER JOIN `{}` `mc`
-              ON (`mc`.`contract_id` = `b`.`contract_id` AND `mc`.`contract_address` IS NOT NULL)
+              ON (`mc`.`post_id` = `b`.`post_id` AND `mc`.`contract_address` IS NOT NULL)
             INNER JOIN `{}` `if`
               ON (`if`.`file_id` = `mc`.`ipfs_file_id`)
         """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
@@ -50,6 +52,14 @@ def _get_board_posts(board_type):
                                                                                                       inner_join)
     order_query_str = "ORDER BY `b`.`post_id` DESC"
 
+    def _to_relation_model(row):
+        row = db.to_relation_model(row)
+        if board_type == 'music':
+            # since ipfs_file is related with music contracts, move ipfs_file row into music_contracts row.
+            row['music_contract']['ipfs_file'] = [row['ipfs_file']]
+            del row['ipfs_file']
+        return row
+
     with db.engine_rdonly.connect() as connection:
         return helper.response_ok(Pagination(
             connection=connection,
@@ -60,7 +70,7 @@ def _get_board_posts(board_type):
             fetch_params={
                 'status': 'posted'
             }
-        ).get_result(db.to_relation_model))
+        ).get_result(_to_relation_model))
 
 
 @blueprint.route('/board/<board_type>', methods=['POST'])
@@ -166,35 +176,47 @@ def _get_community_post(board_type, post_id):
     if board_type == 'music':
         # if board type is music, show with related music contracts and IPFS file.
         additional_columns = """
-            , '!music_contract', `mc`.*, '!ipfs_file', `if`.*
+            , '!music_contract', `mc`.*
         """
         inner_join = """
             LEFT JOIN `{}` `mc`
-              ON (`mc`.`contract_id` = `b`.`contract_id`)
-            LEFT JOIN `{}` `if`
-              ON (`mc`.`ipfs_file_id` = `if`.`file_id`)
+              ON (`mc`.`post_id` = `b`.`post_id`)
         """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
     else:
         additional_columns = ''
         inner_join = ''
 
-    post_query_str = """
+    post_query_statement = """
         SELECT `b`.* {} FROM `{}` `b`
         {}
         WHERE `b`.`post_id` = :post_id AND `b`.`status` = :status
     """.format(additional_columns, table_name, inner_join)
 
+    ipfs_files_query_statement = """
+        SELECT * FROM `ipfs_files` `if`
+        INNER JOIN `music_contracts` `mc`
+          ON (`mc`.`ipfs_file_id` = `if`.`file_id` OR `mc`.`ipfs_file_id` = `if`.`root_id`)
+        WHERE `mc`.`post_id` = :post_id
+    """
+
     tags_statement = db.Statement(db.table.tags(board_type)).columns('name').where(post_id=post_id)
 
     with db.engine_rdonly.connect() as connection:
-        post = connection.execute(text(post_query_str), post_id=post_id, status='posted').fetchone()
-        tags = tags_statement.select(connection)
+        post = connection.execute(text(post_query_statement), post_id=post_id, status='posted').fetchone()
 
         # if the post does not exist,
         if post is None:
             return helper.response_err(ER.NOT_EXIST, ER.NOT_EXIST_MSG)
-
         post = db.to_relation_model(post)
+
+        if board_type == 'music':
+            ipfs_files = db.to_relation_model_list(
+                connection.execute(text(ipfs_files_query_statement), post_id=post_id)
+            )
+            post['music_contract'].update({'ipfs_file': ipfs_files})
+
+        tags = tags_statement.select(connection)
+
         post.update({'tags': [tag['name'] for tag in tags]})
         return helper.response_ok(post)
 
