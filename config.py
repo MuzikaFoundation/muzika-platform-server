@@ -23,7 +23,7 @@ class IPFSConfig:
     (the file path may be ~/.ipfs/config).
     reference : https://github.com/ipfs/js-ipfs/tree/master/examples/circuit-relaying
     """
-    node_address = 'localhost'
+    node_address = '127.0.0.1'
     port = 5001
 
 
