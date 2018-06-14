@@ -84,7 +84,7 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
     try:
         # query object links. If timeout, it will raise Timeout Error
         object_links = ipfs.ls(root_ipfs_hash, opts={
-            'timeout': kwargs.get('timeout', '5s')
+            'timeout': kwargs.get('timeout', '30s')
         })['Objects'][0]['Links']
     except ipfsapi.exceptions.ErrorResponse:
         # if timeout error, set status to "disabled"
@@ -151,4 +151,5 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
 
             # if directory, track recursively
             if link['Type'] == 1:
-                track_object(connection, ipfs_object=link_object, root_id=root_id, **kwargs)
+                kwargs.update({'root_id': root_id})
+                track_object(connection, ipfs_object=link_object, **kwargs)
