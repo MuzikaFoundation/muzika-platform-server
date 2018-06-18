@@ -28,10 +28,10 @@ __all__ = [
 db_secret = load_secret_json('database')
 
 try:
-    rdonly_db_url = URL(**db_secret['db_rdonly'])
+    rdonly_db_url = URL(**db_secret['db_rdonly']) if db_secret else None
 except KeyError:
-    rdonly_db_url = URL(**db_secret['db_rdwr'])
-rdwr_db_url = URL(**db_secret['db_rdwr'])
+    rdonly_db_url = URL(**db_secret['db_rdwr']) if db_secret else None
+rdwr_db_url = URL(**db_secret['db_rdwr']) if db_secret else None
 
 # define db engines
 engine_rdonly = create_engine(rdonly_db_url, encoding='utf-8', pool_recycle=290)
