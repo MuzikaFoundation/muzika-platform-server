@@ -161,7 +161,7 @@ class Statement(object):
         return params
 
     @staticmethod
-    def _get_table_alias(table):
+    def get_table_alias(table):
         return ''.join([word[0] for word in table.split('_')])
 
     def _get_table(self, table=None):
@@ -169,7 +169,7 @@ class Statement(object):
             table = self.table_name
 
         if self._join_mode is True:
-            return '`{}` `{}`'.format(table, self._get_table_alias(table))
+            return '`{}` `{}`'.format(table, self.get_table_alias(table))
         else:
             return '`{}`'.format(table)
 
@@ -182,7 +182,7 @@ class Statement(object):
     def _column_parse(self, column):
         if self._join_mode is True:  # If ORM include Join condition
             table = self.table_name if not isinstance(column, tuple) else column[0]
-            table_alias = self._get_table_alias(table)
+            table_alias = self.get_table_alias(table)
 
             if not isinstance(column, tuple):
                 column = column

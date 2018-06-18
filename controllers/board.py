@@ -51,7 +51,7 @@ def _get_board_posts(board_type):
     with db.engine_rdonly.connect() as connection:
         fetch_query_str = stmt.select(connection, execute=False, is_count_query=False)
         count_query_str = stmt.select(connection, execute=False, is_count_query=True)
-        order_query_str = "ORDER BY `{}`.`post_id` DESC".format(db.statement._get_table_alias(table_name))
+        order_query_str = "ORDER BY `{}`.`post_id` DESC".format(db.statement.get_table_alias(table_name))
 
         return helper.response_ok(Pagination(
             connection=connection,
