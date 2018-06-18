@@ -15,6 +15,7 @@ blueprint = Blueprint('board', __name__, url_prefix='/api')
 @blueprint.route('/board/<board_type>', methods=['GET'])
 def _get_board_posts(board_type):
     table_name = db.table.board(board_type)
+    user_id = request.args.get('user_id')
     page = request.args.get('page', 1)
 
     # if unknown board type
@@ -33,9 +34,11 @@ def _get_board_posts(board_type):
         stmt.inner_join(db.table.MUSIC_CONTRACTS, 'post_id')
         stmt.inner_join((db.table.IPFS_FILES, db.table.MUSIC_CONTRACTS), ('file_id', 'ipfs_file_id'))
 
-    stmt.inner_join(db.table.USERS, 'user_id')
-    stmt.columns('!author', (db.table.USERS, '*'))
+    stmt.inner_join(db.table.USERS, 'user_id').columns('!author', (db.table.USERS, '*'))
     stmt.where(status='posted')
+
+    if user_id:
+        stmt.where(user_id=user_id)
 
     def _to_relation_model(row):
         row = db.to_relation_model(row)
@@ -48,7 +51,7 @@ def _get_board_posts(board_type):
     with db.engine_rdonly.connect() as connection:
         fetch_query_str = stmt.select(connection, execute=False, is_count_query=False)
         count_query_str = stmt.select(connection, execute=False, is_count_query=True)
-        order_query_str = "ORDER BY `mc`.`post_id` DESC"
+        order_query_str = "ORDER BY `{}`.`post_id` DESC".format(db.statement._get_table_alias(table_name))
 
         return helper.response_ok(Pagination(
             connection=connection,
@@ -118,7 +121,7 @@ def _post_to_community(board_type):
             tx_hash = music_contract.get('tx_hash')
 
             # if tx_hash already in music contracts,
-            tx_hash_exists = db.Statement(db.table.MUSIC_CONTRACTS).columns('"_"')\
+            tx_hash_exists = db.Statement(db.table.MUSIC_CONTRACTS).columns('"_"') \
                 .where(tx_hash=tx_hash).limit(1).select(connection).fetchone()
 
             if tx_hash_exists:
