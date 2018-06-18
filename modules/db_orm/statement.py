@@ -34,10 +34,7 @@ class Statement(object):
         self._order_columns = []
         self._limit_cnt = 0
         self._join_mode = False
-        self._join_columns = {
-            'inner': [],
-            'left': []
-        }
+        self._join_columns = []
 
     def columns(self, *args):
         self._select_columns.extend(args)
@@ -72,7 +69,8 @@ class Statement(object):
         #             ('user_id', 'owner_id'))
 
         self._join_mode = True
-        self._join_columns[join_type].append({
+        self._join_columns.append({
+            'join_type': join_type,
             'left_table': table[0] if isinstance(table, tuple) else table,
             'left_on': on[0] if isinstance(on, tuple) else on,
             'right_table': table[1] if isinstance(table, tuple) else self.table_name,
@@ -102,7 +100,7 @@ class Statement(object):
             {order_statement}
             {limit_statement}
         """.format(
-            select_columns=self._select_column_part(*self._select_columns) if self._select_columns else '*',
+            select_columns=self._select_column_part(*self._select_columns),
             table_name=self._get_table(),
             join_statement=self._join_part(),
             where_statement=self._where_part(),
@@ -113,9 +111,7 @@ class Statement(object):
 
     def insert(self, connect, execute=True):
         query = """
-            INSERT INTO {table_name}
-            SET
-              {set_statement}
+            INSERT INTO {table_name} SET {set_statement}
         """.format(table_name=self._get_table(), set_statement=self._set_part(**self._set_columns))
         return connect.execute(text(query), **self.fetch_params)
 
@@ -178,6 +174,8 @@ class Statement(object):
             return '`{}`'.format(table)
 
     def _select_column_part(self, *args):
+        if not args:
+            args = ['*']
         return ', '.join([self._column_parse(column)[0] for column in args])
 
     # variable 'column' could be tuple or string. ex) tuple(table, column) or column
@@ -202,16 +200,15 @@ class Statement(object):
 
     def _join_part(self):
         join_query = []
-        for type in self._join_columns.keys():
-            for condition in self._join_columns[type]:
-                where_conditions = '{} = {}'.format(self._column_parse((condition.get('left_table'),
-                                                                        condition.get('left_on')))[0],
-                                                    self._column_parse((condition.get('right_table'),
-                                                                        condition.get('right_on')))[0])
-                join_query.append('{} JOIN {} ON ({})'.format(type.upper(),  # INNER or LEFT
-                                                              self._get_table(condition.get('left_table')),
-                                                              # define alias table
-                                                              where_conditions))  # ON condition
+        for condition in self._join_columns:
+            where_conditions = '{} = {}'.format(self._column_parse((condition.get('left_table'),
+                                                                    condition.get('left_on')))[0],
+                                                self._column_parse((condition.get('right_table'),
+                                                                    condition.get('right_on')))[0])
+            join_query.append('{} JOIN {} ON ({})'.format(condition.get('join_type').upper(),  # INNER or LEFT
+                                                          self._get_table(condition.get('left_table')),
+                                                          # define alias table
+                                                          where_conditions))  # ON condition
         return ' '.join(join_query)
 
     def _set_part(self, **kwargs):
