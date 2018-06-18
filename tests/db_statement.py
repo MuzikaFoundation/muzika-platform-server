@@ -76,6 +76,19 @@ class DBStatementTest(unittest.TestCase):
             WHERE `mb`.post_id = :where_mb_post_id 
         """))
 
+    def test_update_with_where(self):
+        statement = db.statement(db.table.USERS)\
+                .where(address='address')\
+                .set(name='name')
+        query = pretty_sql(statement.update(None, False))
+        self.assertDictEqual(statement.fetch_params, {
+            'set_name': 'name',
+            'where_address': 'address'
+        })
+        self.assertEqual(query.strip(), pretty_sql("""
+            UPDATE `users` SET name = :set_name WHERE address = :where_address
+        """))
+
     # def _db_orm_statement():
     #     """
     #         @example

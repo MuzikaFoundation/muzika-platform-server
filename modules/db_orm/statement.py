@@ -156,8 +156,8 @@ class Statement(object):
     def fetch_params(self):
         params = {}
         params.update({'set_{}'.format(self._column_parse(key)[0]): value for key, value in self._set_columns.items()})
-        params.update(
-            {'where_{}'.format(self._column_parse(key)[0]): value for key, value in self._where_columns.items()})
+        for table, columns in self._where_columns.items():
+            params.update({'where_{}'.format(self._column_parse(key)[0]): value for key, value in columns.items()})
         return params
 
     @staticmethod
