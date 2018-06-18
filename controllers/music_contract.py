@@ -17,7 +17,7 @@ blueprint = Blueprint('music_contract', __name__, url_prefix='/api')
 @jwt_check
 def _get_paper_file(contract_address):
     """
-    Downloads a paper from a contract.
+    Get aes key for decrypt a paper from a contract.
 
     json form:
     {
@@ -48,15 +48,17 @@ def _get_paper_file(contract_address):
         return helper.response_err(ER.AUTHENTICATION_FAILED, ER.AUTHENTICATION_FAILED_MSG)
 
     key_query_statement = """
-        SELECT `if`.`ipfs_hash`, `if`.`encrypted`, `fp`.`aes_key` FROM `{}` `mc`
-        INNER JOIN `{}` `if`
+        SELECT 
+          `if`.`ipfs_hash`, `if`.`encrypted`, `fp`.`aes_key` 
+        FROM `music_contracts` `mc`
+        INNER JOIN `ipfs_files` `if`
           ON (`mc`.`ipfs_file_id` = `if`.`file_id`)
-        LEFT JOIN `{}` `fp`
+        LEFT JOIN `ipfs_files_private` `fp`
           ON (`if`.`file_id` = `fp`.`file_id`)
         WHERE
-          `contract_address` = :contract_address AND `status` = :contract_status
+          `contract_address` = :contract_address AND `mc`.`status` = :contract_status
         LIMIT 1
-    """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES, db.table.IPFS_FILES_PRIVATE)
+    """
 
     with db.engine_rdonly.connect() as connection:
         key_query = connection.execute(text(key_query_statement),

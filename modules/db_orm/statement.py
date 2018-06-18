@@ -33,6 +33,11 @@ class Statement(object):
         self._where_columns = {}
         self._order_columns = []
         self._limit_cnt = 0
+        self._join_mode = False
+        self._join_columns = {
+            'inner': [],
+            'left': []
+        }
 
     def columns(self, *args):
         self._select_columns.extend(args)
@@ -49,112 +54,196 @@ class Statement(object):
         })
         return self
 
+    def inner_join(self, table, on):
+        return self.join(table, on, 'inner')
+
+    def left_join(self, table, on):
+        return self.join(table, on, 'left')
+
+    def join(self, table, on, join_type):
+        # .inner_join('users', 'user_id')
+        # .inner_join(('music_contracts', 'music_payments'),
+        #             'contract_address')
+        # .inner_join(('users', 'music_payments'),
+        #             ('user_id', 'payer_id'))
+
+        #
+        # .inner_join('users',
+        #             ('user_id', 'owner_id'))
+
+        self._join_mode = True
+        self._join_columns[join_type].append({
+            'left_table': table[0] if isinstance(table, tuple) else table,
+            'left_on': on[0] if isinstance(on, tuple) else on,
+            'right_table': table[1] if isinstance(table, tuple) else self.table_name,
+            'right_on': on[1] if isinstance(on, tuple) else on
+        })
+        return self
+
     def limit(self, limit_cnt):
         self._limit_cnt = limit_cnt
         return self
 
     def where(self, **kwargs):
-        self._where_columns.update(kwargs)
+        return self.where_advanced(self.table_name, **kwargs)
+
+    def where_advanced(self, table, **kwargs):
+        if table not in self._where_columns:
+            self._where_columns[table] = {}
+        self._where_columns[table].update(kwargs)
         return self
 
-    def select(self, connect):
+    def select(self, connect, execute=True):
         query = """
             SELECT {select_columns}
-            FROM `{table_name}`
+            FROM {table_name}
+            {join_statement}
             {where_statement}
             {order_statement}
             {limit_statement}
         """.format(
             select_columns=self._select_column_part(*self._select_columns) if self._select_columns else '*',
-            table_name=self.table_name,
-            where_statement=self._where_part(**self._where_columns),
+            table_name=self._get_table(),
+            join_statement=self._join_part(),
+            where_statement=self._where_part(),
             order_statement=self._order_part(*self._order_columns) if self._order_columns else '',
             limit_statement=self._limit_part(self._limit_cnt) if self._limit_cnt else ''
         )
-        return connect.execute(text(query), **self.fetch_params)
+        return connect.execute(text(query), **self.fetch_params) if execute is True else query
 
-    def insert(self, connect):
+    def insert(self, connect, execute=True):
         query = """
-            INSERT INTO `{table_name}`
+            INSERT INTO {table_name}
             SET
               {set_statement}
-        """.format(table_name=self.table_name, set_statement=self._set_part(**self._set_columns))
+        """.format(table_name=self._get_table(), set_statement=self._set_part(**self._set_columns))
         return connect.execute(text(query), **self.fetch_params)
 
-    def update(self, connect):
+    def update(self, connect, execute=True):
         if len(self._where_columns) == 0:
             raise Exception('[Danger] Muzika DB ORM not allow no-where-condition update query!')
 
         query = """
-            UPDATE `{table_name}`
+            UPDATE {table_name}
             SET
               {set_statement}
             {where_statement}
             {order_statement}
             {limit_statement}
         """.format(
-            table_name=self.table_name,
+            table_name=self._get_table(),
             set_statement=self._set_part(**self._set_columns),
-            where_statement=self._where_part(**self._where_columns),
+            where_statement=self._where_part(),
             order_statement=self._order_part(*self._order_columns) if self._order_columns else '',
             limit_statement=self._limit_part(self._limit_cnt) if self._limit_cnt else ''
         )
-        return connect.execute(text(query), **self.fetch_params)
+        return connect.execute(text(query), **self.fetch_params) if execute is True else query
 
-    def delete(self, connect):
+    def delete(self, connect, execute=True):
         if len(self._where_columns) == 0:
             raise Exception('[Danger] Muzika DB ORM not allow no-where-condition delete query!')
 
         query = """
-            DELETE FROM `{table_name}`
+            DELETE FROM {table_name}
             {where_statement}
             {order_statement}
             {limit_statement}
         """.format(
-            table_name=self.table_name,
-            where_statement=self._where_part(**self._where_columns),
+            table_name=self._get_table(),
+            where_statement=self._where_part(),
             order_statement=self._order_part(*self._order_columns) if self._order_columns else '',
             limit_statement=self._limit_part(self._limit_cnt) if self._limit_cnt else ''
         )
-        return connect.execute(text(query), **self.fetch_params)
+        return connect.execute(text(query), **self.fetch_params) if execute is True else query
 
     @property
     def fetch_params(self):
         params = {}
-        params.update({'set_{}'.format(key): value for key, value in self._set_columns.items()})
-        params.update({'where_{}'.format(key): value for key, value in self._where_columns.items()})
+        params.update({'set_{}'.format(self._column_parse(key)[0]): value for key, value in self._set_columns.items()})
+        params.update(
+            {'where_{}'.format(self._column_parse(key)[0]): value for key, value in self._where_columns.items()})
         return params
 
     @staticmethod
-    def _select_column_part(*args):
-        return ', '.join(args)
+    def _get_table_alias(table):
+        return ''.join([word[0] for word in table.split('_')])
 
-    @staticmethod
-    def _set_part(**kwargs):
-        return ', '.join(['{} = :set_{}'.format(column, column) for column in kwargs])
+    def _get_table(self, table=None):
+        if table is None:
+            table = self.table_name
 
-    @staticmethod
-    def _where_part_condition(column, value):
+        if self._join_mode is True:
+            return '`{}` `{}`'.format(table, self._get_table_alias(table))
+        else:
+            return '`{}`'.format(table)
+
+    def _select_column_part(self, *args):
+        return ', '.join([self._column_parse(column)[0] for column in args])
+
+    # variable 'column' could be tuple or string. ex) tuple(table, column) or column
+    def _column_parse(self, column):
+        if self._join_mode is True:  # If ORM include Join condition
+            table = self.table_name if not isinstance(column, tuple) else column[0]
+            table_alias = self._get_table_alias(table)
+
+            if not isinstance(column, tuple):
+                column = column
+                if column[0] == '!':
+                    return "'{}'".format(column), column
+            else:
+                column = column[1]
+            column_name = '`{}`.{}'.format(table_alias, column)
+            column_param = '{}_{}'.format(table_alias, column)
+        else:
+            column_name = '{}'.format(column)
+            column_param = column
+
+        return column_name, column_param
+
+    def _join_part(self):
+        join_query = []
+        for type in self._join_columns.keys():
+            for condition in self._join_columns[type]:
+                where_conditions = '{} = {}'.format(self._column_parse((condition.get('left_table'),
+                                                                        condition.get('left_on')))[0],
+                                                    self._column_parse((condition.get('right_table'),
+                                                                        condition.get('right_on')))[0])
+                join_query.append('{} JOIN {} ON ({})'.format(type.upper(),  # INNER or LEFT
+                                                              self._get_table(condition.get('left_table')),
+                                                              # define alias table
+                                                              where_conditions))  # ON condition
+        return ' '.join(join_query)
+
+    def _set_part(self, **kwargs):
+        return ', '.join(['{} = :set_{}'.format(*self._column_parse(column)) for column in kwargs])
+
+    def _where_part_condition(self, column, value):
+        column_name, column_param = self._column_parse(column)
+
         if isinstance(value, list):
-            return '`{}` IN :where_{}'.format(column, column)
+            return '{} IN :where_{}'.format(column_name, column_param)
         elif value is None:
-            return '`{}` IS NULL'.format(column)
+            return '{} IS NULL'.format(column_name)
         else:
-            return '`{}` = :where_{}'.format(column, column)
+            return '{} = :where_{}'.format(column_name, column_param)
 
-    @staticmethod
-    def _where_part(**kwargs):
-        if len(kwargs) == 0:
+    def _where_part(self):
+        if not len(self._where_columns.keys()):
             return ''
-        else:
-            return ''.join(['WHERE ', ' AND '.join([Statement._where_part_condition(column, kwargs[column])
-                                                    for column in kwargs])])
 
-    @staticmethod
-    def _order_part(*args):
+        where_query = ['WHERE ']
+        for table in self._where_columns.keys():
+            where_query.append(''.join([' AND '.join([self._where_part_condition((table, column)
+                                                                                 if self._join_mode or self.table_name != table else column,
+                                                                                 self._where_columns[table][column])
+                                                      for column in self._where_columns[table]])]))
+        return ''.join(where_query)
+
+    def _order_part(self, *args):
         if len(args) == 0:
             return ''
-        return 'ORDER BY {}'.format(', '.join(['{} {}'.format(row['column'], row['order']) for row in args]))
+        return 'ORDER BY {}'.format(
+            ', '.join(['{} {}'.format(self._column_parse(row['column'])[0], row['order']) for row in args]))
 
     @staticmethod
     def _limit_part(limit_cnt):

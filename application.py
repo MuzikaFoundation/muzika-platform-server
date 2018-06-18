@@ -5,8 +5,8 @@ from flask_cors import CORS
 
 from config import WebServerConfig
 from controllers import (
-    music_contract, user, file, board, comment, like, seed
-)
+    music_contract, user, file, board, comment, like, seed,
+    board_me)
 from controllers.test import (
     paper_test
 )
@@ -23,6 +23,7 @@ blueprints = [
     user.blueprint,
     file.blueprint,
     board.blueprint,
+    board_me.blueprint,
     comment.blueprint,
     like.blueprint,
     seed.blueprint,
@@ -34,7 +35,7 @@ production_blueprints = [
 
 development_blueprints = [
     # define blueprints for only development
-    paper_test.blueprint,
+    paper_test.blueprint
 ]
 
 
