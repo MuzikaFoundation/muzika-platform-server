@@ -15,6 +15,7 @@ deploy:develop:
     - rm -rf muzika-contract/
     - mkdir muzika-contract/ && mv muzika-contract-build/ muzika-contract/build/
     - python3 -m pip install -r requirements.txt
+    - python3 scripts/secrets.py --download --bucket ${S3_BUCKET}
   script:
     - python3 run_tests.py
     - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
