@@ -82,13 +82,12 @@ class DBStatementTest(unittest.TestCase):
         statement = db.statement(db.table.USERS) \
             .where(address='address') \
             .set(name='name')
-        query = pretty_sql(statement.update(None, False))
-
         self.assertDictEqual(statement.fetch_params, {
             'set_name': 'name',
             'where_address': 'address'
         })
 
+        query = pretty_sql(statement.update(None, False))
         self.assertEqual(query.strip(), pretty_sql("""
             UPDATE `users` SET name = :set_name WHERE address = :where_address
         """))

@@ -91,7 +91,7 @@ class Statement(object):
         self._where_columns[table].update(kwargs)
         return self
 
-    def select(self, connect, execute=True):
+    def select(self, connect, execute=True, is_count_query=False):
         query = """
             SELECT {select_columns}
             FROM {table_name}
@@ -100,7 +100,7 @@ class Statement(object):
             {order_statement}
             {limit_statement}
         """.format(
-            select_columns=self._select_column_part(*self._select_columns),
+            select_columns=self._select_column_part(*self._select_columns) if not is_count_query else 'COUNT(*) AS `cnt`',
             table_name=self._get_table(),
             join_statement=self._join_part(),
             where_statement=self._where_part(),

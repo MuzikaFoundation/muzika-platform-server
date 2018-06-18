@@ -23,34 +23,19 @@ def _get_board_posts(board_type):
 
     from modules.pagination import Pagination
 
+    stmt = db.statement(table_name).columns('*')
+
     if board_type == 'music':
         # If the board type is music, only returns the root IPFS file hash, not recursively since the contract and
         # IPFS files are 1:N relationship, but if only returning the root IPFS file, it can be 1:1 relationship.
-        additional_columns = """
-            , '!music_contract', `mc`.*, '!ipfs_file', `if`.*
-        """
-        inner_join = """
-            INNER JOIN `{}` `mc`
-              ON (`mc`.`post_id` = `b`.`post_id` AND `mc`.`contract_address` IS NOT NULL)
-            INNER JOIN `{}` `if`
-              ON (`if`.`file_id` = `mc`.`ipfs_file_id`)
-        """.format(db.table.MUSIC_CONTRACTS, db.table.IPFS_FILES)
-    else:
-        additional_columns = ''
-        inner_join = ''
+        stmt.columns('!music_contract', (db.table.MUSIC_CONTRACTS, '*'))
+        stmt.columns('!ipfs_file', (db.table.IPFS_FILES, '*'))
+        stmt.inner_join(db.table.MUSIC_CONTRACTS, 'post_id')
+        stmt.inner_join((db.table.IPFS_FILES, db.table.MUSIC_CONTRACTS), ('file_id', 'ipfs_file_id'))
 
-    inner_join = "INNER JOIN `{}` `u` ON (`u`.`user_id` = `b`.`user_id`)".format(db.table.USERS) + inner_join
-
-    fetch_query_str = """
-        SELECT `b`.*, '!author', `u`.* {}
-        FROM `{}` `b` 
-        {}
-        WHERE `b`.`status` = :status
-    """.format(additional_columns, table_name, inner_join)
-
-    count_query_str = "SELECT COUNT(*) AS `cnt` FROM `{}` `b` {} WHERE `b`.`status` = :status".format(table_name,
-                                                                                                      inner_join)
-    order_query_str = "ORDER BY `b`.`post_id` DESC"
+    stmt.inner_join(db.table.USERS, 'user_id')
+    stmt.columns('!author', (db.table.USERS, '*'))
+    stmt.where(status='posted')
 
     def _to_relation_model(row):
         row = db.to_relation_model(row)
@@ -61,15 +46,17 @@ def _get_board_posts(board_type):
         return row
 
     with db.engine_rdonly.connect() as connection:
+        fetch_query_str = stmt.select(connection, execute=False, is_count_query=False)
+        count_query_str = stmt.select(connection, execute=False, is_count_query=True)
+        order_query_str = "ORDER BY `mc`.`post_id` DESC"
+
         return helper.response_ok(Pagination(
             connection=connection,
             fetch=fetch_query_str,
             count=count_query_str,
             order=order_query_str,
             current_page=page,
-            fetch_params={
-                'status': 'posted'
-            }
+            fetch_params=stmt.fetch_params
         ).get_result(_to_relation_model))
 
 
