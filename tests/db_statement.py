@@ -27,12 +27,14 @@ class DBStatementTest(unittest.TestCase):
         """
         Test that db.statement inner join test in select query
         """
-        query = pretty_sql(
-            db.statement(db.table.USERS)
-                .inner_join(db.table.board('music'), 'user_id')
-                .where(user_id='3')
-                .select(None, False)
-        )
+        statement = db.statement(db.table.USERS) \
+            .inner_join(db.table.board('music'), 'user_id') \
+            .where(user_id='3')
+        self.assertDictEqual(statement.fetch_params, {
+            'where_u_user_id': '3'
+        })
+
+        query = pretty_sql(statement.select(None, False))
         self.assertEqual(query.strip(), pretty_sql("""
             SELECT `u`.* 
             FROM `users` `u` 
@@ -77,14 +79,16 @@ class DBStatementTest(unittest.TestCase):
         """))
 
     def test_update_with_where(self):
-        statement = db.statement(db.table.USERS)\
-                .where(address='address')\
-                .set(name='name')
+        statement = db.statement(db.table.USERS) \
+            .where(address='address') \
+            .set(name='name')
         query = pretty_sql(statement.update(None, False))
+
         self.assertDictEqual(statement.fetch_params, {
             'set_name': 'name',
             'where_address': 'address'
         })
+
         self.assertEqual(query.strip(), pretty_sql("""
             UPDATE `users` SET name = :set_name WHERE address = :where_address
         """))
