@@ -157,7 +157,8 @@ class Statement(object):
         params = {}
         params.update({'set_{}'.format(self._column_parse(key)[1]): value for key, value in self._set_columns.items()})
         for table, columns in self._where_columns.items():
-            params.update({'where_{}'.format(self._column_parse(key)[1]): value for key, value in columns.items()})
+            params.update(
+                {'where_{}'.format(self._column_parse((table, key))[1]): value for key, value in columns.items()})
         return params
 
     @staticmethod
@@ -228,13 +229,13 @@ class Statement(object):
         if not len(self._where_columns.keys()):
             return ''
 
-        where_query = ['WHERE ']
+        where_query = []
         for table in self._where_columns.keys():
             where_query.append(''.join([' AND '.join([self._where_part_condition((table, column)
                                                                                  if self._join_mode or self.table_name != table else column,
                                                                                  self._where_columns[table][column])
                                                       for column in self._where_columns[table]])]))
-        return ''.join(where_query)
+        return 'WHERE' + ' AND '.join(where_query)
 
     def _order_part(self, *args):
         if len(args) == 0:
