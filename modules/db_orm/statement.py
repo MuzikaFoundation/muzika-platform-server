@@ -194,6 +194,8 @@ class Statement(object):
             column_name = '`{}`.{}'.format(table_alias, column)
             column_param = '{}_{}'.format(table_alias, column)
         else:
+            if isinstance(column, tuple):
+                column = column[1]
             column_name = '{}'.format(column)
             column_param = column
 
@@ -231,11 +233,11 @@ class Statement(object):
 
         where_query = []
         for table in self._where_columns.keys():
-            where_query.append(''.join([' AND '.join([self._where_part_condition((table, column)
+            where_query.append(' '.join([' AND '.join([self._where_part_condition((table, column)
                                                                                  if self._join_mode or self.table_name != table else column,
                                                                                  self._where_columns[table][column])
                                                       for column in self._where_columns[table]])]))
-        return 'WHERE' + ' AND '.join(where_query)
+        return 'WHERE ' + ' AND '.join(where_query)
 
     def _order_part(self, *args):
         if len(args) == 0:

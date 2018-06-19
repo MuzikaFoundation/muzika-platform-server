@@ -27,14 +27,14 @@ class DBStatementTest(unittest.TestCase):
         """
         Test that db.statement inner join test in select query
         """
-        statement = db.statement(db.table.USERS) \
+        stmt = db.statement(db.table.USERS) \
             .inner_join(db.table.board('music'), 'user_id') \
             .where(user_id='3')
-        self.assertDictEqual(statement.fetch_params, {
+        self.assertDictEqual(stmt.fetch_params, {
             'where_u_user_id': '3'
         })
 
-        query = pretty_sql(statement.select(None, False))
+        query = pretty_sql(stmt.select(None, False))
         self.assertEqual(query.strip(), pretty_sql("""
             SELECT `u`.* 
             FROM `users` `u` 
@@ -79,17 +79,36 @@ class DBStatementTest(unittest.TestCase):
         """))
 
     def test_update_with_where(self):
-        statement = db.statement(db.table.USERS) \
+        stmt = db.statement(db.table.USERS) \
             .where(address='address') \
             .set(name='name')
-        self.assertDictEqual(statement.fetch_params, {
+        self.assertDictEqual(stmt.fetch_params, {
             'set_name': 'name',
             'where_address': 'address'
         })
 
-        query = pretty_sql(statement.update(None, False))
+        query = pretty_sql(stmt.update(None, False))
         self.assertEqual(query.strip(), pretty_sql("""
             UPDATE `users` SET name = :set_name WHERE address = :where_address
+        """))
+
+    def test_multiple_where_advanced(self):
+        stmt = db.statement(db.table.USERS) \
+            .inner_join(db.table.board('music'), 'user_id') \
+            .inner_join(db.table.board('video'), 'user_id') \
+            .where_advanced(db.table.board('music'), post_id=3) \
+            .where_advanced(db.table.board('video'), post_id=5)
+        self.assertDictEqual(stmt.fetch_params, {
+            'where_mb_post_id': 3,
+            'where_vb_post_id': 5
+        })
+
+        query = pretty_sql(stmt.select(None, False))
+        self.assertEqual(query.strip(), pretty_sql("""
+            SELECT `u`.* FROM `users` `u` 
+            INNER JOIN `music_board` `mb` ON (`mb`.user_id = `u`.user_id) 
+            INNER JOIN `video_board` `vb` ON (`vb`.user_id = `u`.user_id) 
+            WHERE `mb`.post_id = :where_mb_post_id   AND `vb`.post_id = :where_vb_post_id
         """))
 
     # def _db_orm_statement():
