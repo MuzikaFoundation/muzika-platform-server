@@ -3,7 +3,7 @@ from flask import Blueprint, request
 from modules.aws import MuzikaS3Bucket
 from modules.login import jwt_check
 from modules.response import helper
-from modules.response import error_constants as ER
+from modules.response.error import ERR
 from modules import database as db
 import base64
 from modules.ipfs import RelayIpfs
@@ -23,7 +23,7 @@ def _upload_file():
     # get files
     if len(request.files) != 1:
         # if the number of file uploaded is not 1,
-        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+        return helper.response_err(ERR.INVALID_REQUEST_BODY)
 
     file = next(iter(request.files.values()))
     file_name = file.filename
@@ -43,7 +43,7 @@ def _upload_file():
                           file_type=file_type, content_type=file.content_type, hash=ipfs_hash, aes_key=aes_key)
 
         if not file:
-            return helper.response_err(ER.UPLOAD_FAIL, ER.UPLOAD_FAIL_MSG)
+            return helper.response_err(ERR.UPLOAD_FAIL)
 
         return helper.response_ok({
             'file_id': file['file_id']

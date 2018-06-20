@@ -18,9 +18,9 @@ def response_xml(xml_str):
                     mimetype="application/xml")
 
 
-def response_err(state, message, data=None, http_status_code=406):
+def response_err(err, data=None, http_status_code=406):
     return make_response(jsonify({
-        'state': state,
-        'message': message,
+        'code': err.code,
+        'message': err.msg,
         'data': data
     }), http_status_code)

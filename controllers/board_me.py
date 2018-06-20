@@ -3,10 +3,8 @@ from sqlalchemy import text
 
 from modules import database as db
 from modules.login import jwt_check
-from modules.response import (
-    helper,
-    error_constants as ER
-)
+from modules.response import helper
+from modules.response.error import ERR
 
 from modules.pagination import Pagination
 
@@ -47,7 +45,7 @@ def _get_my_post(board_type):
     page = request.args.get('page', 1)
 
     if not table_name:
-        return helper.response_err(ER.INVALID_REQUEST_BODY, ER.INVALID_REQUEST_BODY_MSG)
+        return helper.response_err(ERR.INVALID_REQUEST_BODY)
 
     from modules import board
 

@@ -4,10 +4,6 @@ from flask import Blueprint, request, make_response
 from modules.block.block import Block
 from modules.block.block_request import BlockRequest
 from modules.ipfs import RelayIpfs
-from modules.login import jwt_check
-from modules.response import error_constants as ER
-from modules.response import helper
-import base64
 
 blueprint = Blueprint('paper_test', __name__, url_prefix='/api/test')
 

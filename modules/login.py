@@ -149,7 +149,7 @@ def jwt_check(func):
         from flask import request
 
         from modules.response import helper
-        from modules.response import error_constants as ER
+        from modules.response.error import ERR
 
         # get JWT token from request header "Authorization"
         token = request.headers.get('Authorization', None)
@@ -159,7 +159,7 @@ def jwt_check(func):
         try:
             decoded_token = jwt.decode(token, JWT_SECRET_KEY, verify=True, audience=WebServerConfig.issuer)
         except jwt.exceptions.InvalidTokenError:
-            return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
+            return helper.response_err(ERR.INVALID_SIGNATURE)
         address, sign_message_id = decoded_token['jti'].split('-')
 
         # get sign message for calculating hash
@@ -192,7 +192,7 @@ def jwt_check(func):
 
             # if decoded hash is not equal to calculated hash from db, it's invalid token
             if decoded_hash != real_hash:
-                return helper.response_err(ER.INVALID_SIGNATURE, ER.INVALID_SIGNATURE_MSG)
+                return helper.response_err(ERR.INVALID_SIGNATURE)
 
             # authenticated and inject user information
             request.user = user_row
