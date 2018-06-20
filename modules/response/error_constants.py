@@ -24,5 +24,11 @@ UPLOAD_FAIL_MSG = "Failed to upload the file."
 TX_HASH_DUPLICATED = 407
 TX_HASH_DUPLICATED_MSG = "tx hash already exists"
 
-INVALID_TX_HASH = 407
+INVALID_TX_HASH = 408
 INVALID_TX_HASH_MSG = "tx hash already exists"
+
+TOO_LONG_PARAMETER = 409
+TOO_LONG_PARAMETER_MSG = 'too long parameter'
+
+TOO_SHORT_PARAMETER = 410
+TOO_SHORT_PARAMETER_MSG = 'too short parameter'
