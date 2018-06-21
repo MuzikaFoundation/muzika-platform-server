@@ -11,26 +11,21 @@ from modules.pagination import Pagination
 blueprint = Blueprint('board_me', __name__, url_prefix='/api')
 
 
-@blueprint.route('/user/board/music/purchased', methods=['GET'])
+@blueprint.route('/user/board/<board_type>/purchased', methods=['GET'])
 @jwt_check
-def _get_my_upload_board():
-    type = request.args.get('type')
+def _get_my_upload_board(board_type):
+    """
+    :param board_type: 'sheet' or 'streaming'
+    :return: BasePost[]
+    """
     user = request.user
     with db.engine_rdonly.connect() as connect:
-        query_str = """
-            SELECT 
-              `mb`.*, 
-              '!music_contract', `mc`.*, 
-              '!music_payment',  `mp`.* 
-            FROM `music_board` `mb` 
-            INNER JOIN `music_contracts` `mc` ON (`mc`.`post_id` = `mb`.`post_id`) 
-            INNER JOIN `music_payments` `mp` ON (`mp`.`contract_address` = `mc`.`contract_address`) 
-            WHERE `mp`.`buyer_address` = :buyer_address AND `mb`.`type` = :type 
-            ORDER BY `mc`.`contract_address` 
-        """
-
-        query = connect.execute(text(query_str), type=type,
-                                buyer_address=user['address'])
+        query = db.statement(db.table.board('music')) \
+            .inner_join(db.table.MUSIC_CONTRACTS, 'post_id') \
+            .inner_join(db.table.MUSIC_PAYMENTS, 'contract_address') \
+            .where(type=board_type) \
+            .where_advanced(db.table.MUSIC_PAYMENTS, buyer_address=user['address']) \
+            .order('post_id', 'desc').select(connect)
 
         return helper.response_ok([db.to_relation_model(row) for row in query])
 

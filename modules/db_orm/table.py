@@ -18,7 +18,9 @@ class Table:
 
     @staticmethod
     def board(board_type):
-        if board_type not in BOARD_TYPE_LIST:
+        if board_type in ['sheet', 'streaming']:
+            return 'music_board'
+        elif board_type not in BOARD_TYPE_LIST:
             return None
         else:
             return '{}_board'.format(board_type)
