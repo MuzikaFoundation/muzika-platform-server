@@ -3,7 +3,7 @@ import os
 from flask import Flask
 from flask_cors import CORS
 
-from config import WebServerConfig
+from config import AppConfig
 from controllers import (
     music_contract, user, file, board, comment, like, seed,
     board_me)
@@ -37,6 +37,12 @@ development_blueprints = [
     # define blueprints for only development
     paper_test.blueprint
 ]
+
+
+# application configuration
+application.config.update(
+    MAX_CONTENT_LENGTH=AppConfig.max_content_length
+)
 
 
 # ELB Health Check Route
@@ -90,8 +96,8 @@ if __name__ == '__main__':
     # run web application
     try:
         application.run(
-            host=WebServerConfig.host,
-            port=WebServerConfig.port,
+            host=AppConfig.host,
+            port=AppConfig.port,
             threaded=True
         )
     except Exception as e:

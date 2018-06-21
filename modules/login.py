@@ -11,7 +11,7 @@ import hashlib
 import jwt
 from sqlalchemy import text
 
-from config import WebServerConfig
+from config import AppConfig
 from modules import database as db
 from modules.secret import load_secret_json
 
@@ -37,7 +37,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     """
     import arrow
     import datetime
-    from config import WebServerConfig
+    from config import AppConfig
     from modules.sign_message import (
         generate_random_sign_message, register_sign_message_by_id, expire_sign_message
     )
@@ -61,7 +61,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
 
     sign_message = get_message_for_user(address, always_new=False)
 
-    tz = arrow.now(WebServerConfig.timezone).datetime
+    tz = arrow.now(AppConfig.timezone).datetime
 
     """
     Validate the signature. If fail to validate, never generate JWT token.
@@ -105,8 +105,8 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         'hash': hashlib.md5("{}-{}-{}-{}".format(user_id, sign_message_id, checksum_address, private_key)
                             .encode('utf-8')).hexdigest(),
         'jti': '{}-{}'.format(address, sign_message_id),
-        'iss': WebServerConfig.issuer,
-        'aud': WebServerConfig.issuer,
+        'iss': AppConfig.issuer,
+        'aud': AppConfig.issuer,
         'iat': tz - datetime.timedelta(seconds=60),
         'exp': tz + datetime.timedelta(days=30)
     }
@@ -157,7 +157,7 @@ def jwt_check(func):
 
         # decode token
         try:
-            decoded_token = jwt.decode(token, JWT_SECRET_KEY, verify=True, audience=WebServerConfig.issuer)
+            decoded_token = jwt.decode(token, JWT_SECRET_KEY, verify=True, audience=AppConfig.issuer)
         except jwt.exceptions.InvalidTokenError:
             return helper.response_err(ERR.INVALID_SIGNATURE)
         address, sign_message_id = decoded_token['jti'].split('-')

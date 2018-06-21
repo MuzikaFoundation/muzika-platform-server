@@ -85,3 +85,21 @@ class ERR:
         en='Too short parameter.',
         ko='인자 값이 너무 짧습니다.',
     )
+
+    FILE_SIZE_LIMIT_EXCEEDED = ErrorResponse(
+        code=11,
+        en='File size is too big.',
+        ko='파일 크기가 너무 큽니다.',
+    )
+
+    NOT_ALLOWED_CONTENT_TYPE = ErrorResponse(
+        code=12,
+        en='Not allowed content type.',
+        ko='컨텐츠 타입이 올바르지 않습니다.',
+    )
+
+    TOO_MANY_REQUEST = ErrorResponse(
+        code=13,
+        en='Server blocks your requests temporarily because of too many requests',
+        ko='잦은 요청으로 인하여 일시적으로 차단되었습니다.'
+    )

@@ -5,7 +5,8 @@
 """
 import os
 
-class WebServerConfig:
+
+class AppConfig:
     """
     Global constants for Web backend server.
     """
@@ -13,6 +14,9 @@ class WebServerConfig:
     port = 7001
     timezone = 'UTC'
     issuer = 'https://muzika.network'
+
+    # request that the content length is over it will be rejected
+    max_content_length = 1024 * 1024 * 3    # 3 MB
 
 
 class IPFSConfig:
