@@ -3,6 +3,17 @@ from flask import json
 from flask import make_response, jsonify, Response
 
 
+def deprecated(func):
+    from functools import wraps
+    from warnings import warn
+
+    @wraps(func)
+    def _func(*args, **kwargs):
+        warn('called deprecated API')
+        return func(*args, **kwargs)
+    return _func
+
+
 def response_ok(additional_data):
     json_str = json.dumps(additional_data, ensure_ascii=False).encode('utf-8').decode('utf-8')
 

@@ -75,6 +75,7 @@ def _upload_profile_image():
 
 @blueprint.route('/file', methods=['POST'])
 @jwt_check
+@helper.deprecated
 def _upload_file():
     """
     uploads a file. (Only one file is allowed at once)
