@@ -1,4 +1,5 @@
 from flask import Blueprint, request
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from modules import database as db
@@ -6,10 +7,14 @@ from modules.ethereum_address import check_address_format
 from modules.login import jwt_check, PLATFORM_TYPES
 from modules.response.error import ERR
 from modules.response import helper
+from modules.secret import load_secret_json
 from modules.sign_message import get_message_for_user
 from modules.web3 import get_web3
 
 blueprint = Blueprint('user', __name__, url_prefix='/api')
+
+
+s3_policy = load_secret_json('aws')['s3']
 
 
 @blueprint.route('/me', methods=['GET'])
@@ -26,6 +31,16 @@ def _get_user(address):
     If user(address) does not exist, give a random message for signing
     """
 
+    s3_base_url = 'https://s3.{region}.amazonaws.com'.format(region=s3_policy['profile']['region'])
+
+    user_query_stmt = """
+        SELECT `u`.*, CONCAT(:s3_base_url, '/', `f`.`bucket`, '/', `f`.`object_key`) AS `profile_url` FROM `{}` `u`
+        LEFT JOIN `{}` `f`
+          ON (`f`.`file_id` = `u`.`profile_file_id`)
+        WHERE `u`.`address` = :address
+        LIMIT 1
+    """.format(db.table.USERS, db.table.FILES)
+
     # if invalid address format, don't generate message
     if not check_address_format(address):
         return helper.response_err(ERR.INVALID_REQUEST_BODY)
@@ -34,7 +49,11 @@ def _get_user(address):
     web3.toChecksumAddress(address)
 
     with db.engine_rdonly.connect() as connection:
-        user = db.statement(db.table.USERS).where(address=address).select(connection).fetchone()
+        user = connection.execute(text(user_query_stmt), s3_base_url=s3_base_url, address=address).fetchone()
+
+        if user is None:
+            return helper.response_err(ERR.NOT_EXIST)
+
         return helper.response_ok(db.to_relation_model(user))
 
 
@@ -109,10 +128,14 @@ def _put_user_info():
     """
     json_form = request.get_json(force=True, silent=True)
     user_id = request.user['user_id']
+    profile_file_id = json_form.get('profile_file_id')
 
     # only these columns can be changed
     changable_columns = ['name', 'youtube_url', 'facebook_url', 'soundcloud_url', 'spotify_url']
     change_value = {}
+
+    if isinstance(profile_file_id, int):
+        change_value.update({'profile_file_id': profile_file_id})
 
     for column in changable_columns:
         if column in json_form:
@@ -157,3 +180,19 @@ def _change_user_soundcloud_url():
 @jwt_check
 def _change_user_spotify_url():
     return _change_user_info('spotify_url', 255)
+
+
+@blueprint.route('/user/profile', methods=['PUT'])
+@jwt_check
+def _change_user_profile():
+    json_form = request.get_json(force=True, silent=True)
+    user_id = request.user['user_id']
+    profile_file_id = request.user.get('profile_file_id')
+
+    if not isinstance(profile_file_id, int):
+        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+
+    with db.engine_rdwr.connect() as connection:
+        db.statement(db.table.USERS).set(profile_file_id=profile_file_id).where(user_id=user_id).update(connection)
+
+    return helper.response_ok({'status': 'success'})

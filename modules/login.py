@@ -16,6 +16,7 @@ from modules import database as db
 from modules.secret import load_secret_json
 
 jwt_json = load_secret_json('jwt')
+s3_policy = load_secret_json('aws')['s3']
 
 JWT_SECRET_KEY = jwt_json['jwt_secret_key']
 
@@ -164,14 +165,24 @@ def jwt_check(func):
 
         # get sign message for calculating hash
         request.connection = db.engine_rdonly.connect()
+        s3_base_url = 'https://s3.{region}.amazonaws.com'.format(region=s3_policy['profile']['region'])
         sign_message_query_str = """
-            SELECT `u`.*, '!sign_message', `sm`.* FROM `users` `u`
+            SELECT 
+              `u`.*, 
+              CONCAT(:s3_base_url, '/', `f`.`bucket`, '/', `f`.`object_key`) AS `profile_url`, 
+              '!sign_message', 
+              `sm`.* 
+            FROM 
+              `{}` `u`
+            LEFT JOIN `{}` `f`
+              ON (`f`.`file_id` = `u`.`profile_file_id`)
             INNER JOIN `sign_messages` `sm` ON (`u`.`user_id` = `sm`.`user_id`)
             WHERE `message_id` = :sign_message_id AND `address` = :address
             LIMIT 1
-        """
+        """.format(db.table.USERS, db.table.FILES)
         user_row = request.connection.execute(text(sign_message_query_str),
                                               address=address,
+                                              s3_base_url=s3_base_url,
                                               sign_message_id=sign_message_id).fetchone()
         if user_row is not None:
             user_row = db.to_relation_model(user_row)
