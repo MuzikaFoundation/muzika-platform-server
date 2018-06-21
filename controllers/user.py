@@ -36,7 +36,7 @@ def _get_user(address):
     user_query_stmt = """
         SELECT `u`.*, CONCAT(:s3_base_url, '/', `f`.`bucket`, '/', `f`.`object_key`) AS `profile_image` FROM `{}` `u`
         LEFT JOIN `{}` `f`
-          ON (`f`.`file_id` = `u`.`profile_file_id`)
+          ON (`f`.`file_id` = `u`.`profile_file_id` AND `f`.`type` = :file_type)
         WHERE `u`.`address` = :address
         LIMIT 1
     """.format(db.table.USERS, db.table.FILES)
@@ -49,7 +49,12 @@ def _get_user(address):
     web3.toChecksumAddress(address)
 
     with db.engine_rdonly.connect() as connection:
-        user = connection.execute(text(user_query_stmt), s3_base_url=s3_base_url, address=address).fetchone()
+        user = connection.execute(
+            text(user_query_stmt),
+            s3_base_url=s3_base_url,
+            address=address,
+            file_type='profile'
+        ).fetchone()
 
         if user is None:
             return helper.response_err(ERR.NOT_EXIST)

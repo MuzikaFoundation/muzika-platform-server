@@ -173,14 +173,15 @@ def jwt_check(func):
               '!sign_message', 
               `sm`.* 
             FROM 
-              `{}` `u`
-            LEFT JOIN `{}` `f`
-              ON (`f`.`file_id` = `u`.`profile_file_id`)
+              `users` `u`
+            LEFT JOIN `files` `f`
+              ON (`f`.`file_id` = `u`.`profile_file_id` AND `f`.`type` = :file_type)
             INNER JOIN `sign_messages` `sm` ON (`u`.`user_id` = `sm`.`user_id`)
             WHERE `message_id` = :sign_message_id AND `address` = :address
             LIMIT 1
-        """.format(db.table.USERS, db.table.FILES)
+        """
         user_row = request.connection.execute(text(sign_message_query_str),
+                                              file_type='profile',
                                               address=address,
                                               s3_base_url=s3_base_url,
                                               sign_message_id=sign_message_id).fetchone()
