@@ -11,7 +11,7 @@
 """
 
 import boto3
-from sqlalchemy import text
+import uuid
 
 from modules import database as db
 from modules.secret import load_secret_json
@@ -71,7 +71,7 @@ class MuzikaS3Bucket(object):
         # if hash value is not set, calculate file hash value
         file_hash = hash or hashlib.sha256(value).hexdigest()
 
-        object_key = '{}-{}.{}'.format(str(int(time() * 100)), file_hash, ext)
+        object_key = '{}.{}'.format(uuid.uuid4(), ext)
         if directory:
             object_key = ''.join([directory, '/', object_key])
 

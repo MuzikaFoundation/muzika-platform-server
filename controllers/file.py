@@ -2,13 +2,11 @@
 from flask import Blueprint, request
 from sqlalchemy import text
 
+from modules import database as db
 from modules.aws import MuzikaS3Bucket
 from modules.login import jwt_check
 from modules.response import helper
 from modules.response.error import ERR
-from modules import database as db
-import base64
-from modules.ipfs import RelayIpfs
 from modules.secret import load_secret_json
 
 blueprint = Blueprint('file', __name__, url_prefix='/api')
