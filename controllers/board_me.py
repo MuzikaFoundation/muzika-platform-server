@@ -22,7 +22,7 @@ def _get_my_upload_board(board_type):
     with db.engine_rdonly.connect() as connect:
         query = db.statement(db.table.board('music')) \
             .inner_join(db.table.MUSIC_CONTRACTS, 'post_id') \
-            .inner_join(db.table.MUSIC_PAYMENTS, 'contract_address') \
+            .inner_join((db.table.MUSIC_PAYMENTS, db.table.MUSIC_CONTRACTS), 'contract_address') \
             .where(type=board_type) \
             .where_advanced(db.table.MUSIC_PAYMENTS, buyer_address=user['address']) \
             .order('post_id', 'desc').select(connect)
