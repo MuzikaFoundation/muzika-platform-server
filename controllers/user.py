@@ -34,7 +34,7 @@ def _get_user(address):
     s3_base_url = 'https://s3.{region}.amazonaws.com'.format(region=s3_policy['profile']['region'])
 
     user_query_stmt = """
-        SELECT `u`.*, CONCAT(:s3_base_url, '/', `f`.`bucket`, '/', `f`.`object_key`) AS `profile_url` FROM `{}` `u`
+        SELECT `u`.*, CONCAT(:s3_base_url, '/', `f`.`bucket`, '/', `f`.`object_key`) AS `profile_image` FROM `{}` `u`
         LEFT JOIN `{}` `f`
           ON (`f`.`file_id` = `u`.`profile_file_id`)
         WHERE `u`.`address` = :address

@@ -169,7 +169,7 @@ def jwt_check(func):
         sign_message_query_str = """
             SELECT 
               `u`.*, 
-              CONCAT(:s3_base_url, '/', `f`.`bucket`, '/', `f`.`object_key`) AS `profile_url`, 
+              CONCAT(:s3_base_url, '/', `f`.`bucket`, '/', `f`.`object_key`) AS `profile_image`, 
               '!sign_message', 
               `sm`.* 
             FROM 
