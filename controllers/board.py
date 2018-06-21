@@ -4,6 +4,7 @@ from sqlalchemy import text
 import tasks
 from modules import database as db
 from modules import ipfs
+from modules.board import MUSIC_POST_TYPE
 from modules.login import jwt_check
 from modules.response.error import ERR
 from modules.response import helper
@@ -28,6 +29,11 @@ def _get_board_posts(board_type):
     stmt = board.posts_query_stmt(board_type=board_type, user_id=user_id)
 
     if board_type == 'music':
+        post_type = request.args.get('type')
+
+        if isinstance(post_type, str):
+            stmt.where(type=post_type)
+
         # only accept mined contract for users to show only purchasable contracts.
         stmt.where_advanced(db.table.MUSIC_CONTRACTS, status='success')
 
@@ -102,7 +108,13 @@ def _post_to_community(board_type):
 
         post_statement.set(genre=genre, youtube_video_id=youtube_video_id)
     elif board_type == 'music':
-        pass
+        post_type = json_form.get('type')
+
+        # if post type is not valid
+        if post_type not in MUSIC_POST_TYPE:
+            return helper.response_err(ERR.INVALID_REQUEST_BODY)
+
+        post_statement.set(type=post_type)
 
     with db.engine_rdwr.connect() as connection:
         post_id = post_statement.insert(connection).lastrowid

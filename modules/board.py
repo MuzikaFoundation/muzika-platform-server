@@ -2,6 +2,12 @@
 from modules import database as db
 
 
+MUSIC_POST_TYPE = [
+    'sheet',
+    'streaming',
+]
+
+
 def posts_query_stmt(board_type, **kwargs):
     """
     Returns a statement for querying board posts.
