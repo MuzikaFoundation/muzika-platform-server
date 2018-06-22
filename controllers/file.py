@@ -57,8 +57,9 @@ def _upload_file():
     with db.engine_rdwr.connect() as connection:
         upload_cnt = connection.execute(text(upload_log_stmt), user_id=user_id, file_type=file_type).fetchone()['cnt']
 
-        # if profiles were uploaded over 5 times for 10 minutes, block the request.
-        if upload_cnt >= s3_policy[file_type]['upload_count_limit']:
+        # if the file uploaded too much, reject the request
+        upload_cnt_limit = s3_policy[file_type].get('upload_count_limit')
+        if upload_cnt_limit and upload_cnt >= upload_cnt_limit:
             return helper.response_err(ERR.TOO_MANY_REQUEST)
 
         file = profile_bucket.put(
