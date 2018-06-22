@@ -92,7 +92,6 @@ def _post_to_community(board_type):
     """.format(db.table.tags(board_type))
 
     post_statement = db.Statement(table_name).set(user_id=user_id, title=title, content=content)
-    contract_statement = None
 
     if board_type == 'community':
         # community needs no additional columns
@@ -138,17 +137,15 @@ def _post_to_community(board_type):
                 aes_key=music_contract.get('aes_key')
             )
 
-            # update IPFS file info later
-            tasks.ipfs_objects_update.delay(ipfs_file_id)
-
             contract_statement = db.Statement(db.table.MUSIC_CONTRACTS).set(
                 ipfs_file_id=ipfs_file_id,
                 tx_hash=tx_hash,
                 post_id=post_id
             )
 
-        if contract_statement is not None:
             contract_id = contract_statement.insert(connection).lastrowid
+            # update IPFS file info later
+            tasks.update_contract_files.delay(ipfs_file_id, contract_id)
 
         # if tags exist, insert tags
         if tags:

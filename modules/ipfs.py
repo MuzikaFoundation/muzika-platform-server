@@ -154,3 +154,32 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
             if link['Type'] == 1:
                 kwargs.update({'root_id': root_id})
                 track_object(connection, ipfs_object=link_object, **kwargs)
+
+
+def translate_contract(connection, contract_id=None):
+    """
+    Reads the meta.json file in the contract file and translate it.
+    """
+    ipfs_object_stmt = """
+        SELECT `if`.* FROM `ipfs_files` `if`
+        INNER JOIN `music_contracts` `mc`
+          ON (`if`.`file_id` = `mc`.`ipfs_file_id`)
+        WHERE `mc`.`contract_id` = :contract_id
+        LIMIT 1
+    """
+
+    ipfs_object = connection.execute(text(ipfs_object_stmt), contract_id=contract_id).fetchone()
+
+    if not ipfs_object:
+        raise ValueError('ipfs object does not exist.')
+
+    import requests
+
+    root_hash = ipfs_object['ipfs_hash']
+    meta_query_url = 'https://ipfs.io/ipfs/{root_hash}/meta.json'.format(root_hash=root_hash)
+    req = requests.get(meta_query_url)
+
+    if req.status_code != 200:
+        raise ValueError('cannot find meta file')
+
+    db.statement(db.table.MUSIC_CONTRACTS).set(meta=req.text).where(contract_id=contract_id).update(connection)

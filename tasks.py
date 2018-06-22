@@ -24,10 +24,11 @@ def setup_periodic_tasks(sender, **kwargs):
 
 
 @app.task(bind=True, max_retries=3)
-def ipfs_objects_update(self, ipfs_file_id):
-    from modules.ipfs import track_object
+def update_contract_files(self, ipfs_file_id, contract_id):
+    from modules.ipfs import track_object, translate_contract
     with db.engine_rdwr.connect() as connection:
         track_object(connection, ipfs_file_id=ipfs_file_id)
+        translate_contract(connection, contract_id)
 
 
 @app.task(bind=True)
