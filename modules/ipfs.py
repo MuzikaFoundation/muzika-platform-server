@@ -131,6 +131,7 @@ def track_object(connection, ipfs_file_id=None, ipfs_object=None, **kwargs):
             # if the linked object is file (Type == 2)
             else:
                 link_object.update({
+                    'file_size': link['Size'],
                     'ipfs_object_type': 'file',
                     'status': 'success'
                 })
