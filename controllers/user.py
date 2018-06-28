@@ -205,28 +205,29 @@ def _change_user_profile():
     return helper.response_ok({'status': 'success'})
 
 
-@blueprint.route('/user/draftbox', methods=['GET'])
+@blueprint.route('/user/draftbox/<board_type>', methods=['GET'])
 @jwt_check
-def _get_draftbox():
+def _get_draftbox(board_type):
     user_id = request.user['user_id']
+
     with db.engine_rdonly.connect() as connection:
-        draft_box_stmt = db.statement(db.table.DRAFT_BOX).where(user_id=user_id).limit(1).select(connection).fetchone()
+        draft_box_stmt = db.statement(db.table.DRAFT_BOX)\
+            .where(user_id=user_id, board_type=board_type).limit(1)\
+            .select(connection).fetchone()
 
         if draft_box_stmt is None:
             # if user's draftbox does not exist, return empty draft box
             return helper.response_ok({
-                'community': [],
-                'video': [],
-                'music': []
+                board_type: []
             })
 
         else:
-            return helper.response_ok(draft_box_stmt['draft_box'])
+            return helper.response_ok(json.loads(draft_box_stmt['draft_box']))
 
 
-@blueprint.route('/user/draftbox', methods=['PUT'])
+@blueprint.route('/user/draftbox/<board_type>', methods=['PUT'])
 @jwt_check
-def _put_draftbox():
+def _put_draftbox(board_type):
     draft_box = json.dumps(request.get_json(force=True, silent=True))
     user_id = request.user['user_id']
 
@@ -239,24 +240,26 @@ def _put_draftbox():
         INSERT INTO `user_post_drafts`
         SET
           `user_id` = :user_id,
+          `board_type` = :board_type,
           `draft_box` = :draft_box
         ON DUPLICATE KEY UPDATE
+          `board_type` = :board_type,
           `draft_box` = :draft_box
     """
 
     with db.engine_rdwr.connect() as connection:
-        connection.execute(text(put_query_stmt), user_id=user_id, draft_box=draft_box)
+        connection.execute(text(put_query_stmt), user_id=user_id, board_type=board_type, draft_box=draft_box)
         return helper.response_ok({
             'status': 'success'
         })
 
 
-@blueprint.route('/user/draftbox', methods=['DELETE'])
+@blueprint.route('/user/draftbox/<board_type>', methods=['DELETE'])
 @jwt_check
-def _delete_draftbox():
+def _delete_draftbox(board_type):
     user_id = request.user['user_id']
 
     with db.engine_rdwr.connect() as connection:
-        db.statement(db.table.DRAFT_BOX).where(user_id=user_id).limit(1).delete(connection)
+        db.statement(db.table.DRAFT_BOX).where(user_id=user_id, board_type=board_type).limit(1).delete(connection)
 
         return helper.response_ok({'status': 'success'})
