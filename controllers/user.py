@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, request
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -201,3 +203,44 @@ def _change_user_profile():
         db.statement(db.table.USERS).set(profile_file_id=profile_file_id).where(user_id=user_id).update(connection)
 
     return helper.response_ok({'status': 'success'})
+
+
+@blueprint.route('/user/draftbox', methods=['GET'])
+@jwt_check
+def _get_draftbox():
+    user_id = request.user['user_id']
+    with db.engine_rdonly.connect() as connection:
+        draft_box_stmt = db.statement(db.table.DRAFT_BOX).where(user_id=user_id).limit(1).select(connection).fetchone()
+
+        if draft_box_stmt is None:
+            # if user's draftbox does not exist, return empty draft box
+            return helper.response_ok({
+                'community': [],
+                'video': [],
+                'music': []
+            })
+
+        else:
+            return helper.response_ok(draft_box_stmt['draft_box'])
+
+
+@blueprint.route('/user/draftbox', methods=['PUT'])
+@jwt_check
+def _put_draftbox():
+    draft_box = json.dumps(request.get_json(force=True, silent=True))
+    user_id = request.user['user_id']
+
+    put_query_stmt = """
+        INSERT INTO `user_post_drafts`
+        SET
+          `user_id` = :user_id,
+          `draft_box` = :draft_box
+        ON DUPLICATE KEY UPDATE
+          `draft_box` = :draft_box
+    """
+
+    with db.engine_rdwr.connect() as connection:
+        connection.execute(text(put_query_stmt), user_id=user_id, draft_box=draft_box)
+        return helper.response_ok({
+            'status': 'success'
+        })

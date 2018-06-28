@@ -16,6 +16,8 @@ class Table:
     IPFS_FILES = 'ipfs_files'
     IPFS_FILES_PRIVATE = 'ipfs_files_private'
 
+    DRAFT_BOX = 'user_post_drafts'
+
     @staticmethod
     def board(board_type):
         if board_type in ['sheet', 'streaming']:
