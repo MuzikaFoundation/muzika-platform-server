@@ -230,6 +230,11 @@ def _put_draftbox():
     draft_box = json.dumps(request.get_json(force=True, silent=True))
     user_id = request.user['user_id']
 
+    # if json is null, don't clear original data for safety.
+    # the data can be cleared by DELETE method.
+    if not draft_box:
+        return helper.response_err(ERR.NOT_ALLOWED_CONTENT_TYPE)
+
     put_query_stmt = """
         INSERT INTO `user_post_drafts`
         SET
@@ -244,3 +249,14 @@ def _put_draftbox():
         return helper.response_ok({
             'status': 'success'
         })
+
+
+@blueprint.route('/user/draftbox', methods=['DELETE'])
+@jwt_check
+def _delete_draftbox():
+    user_id = request.user['user_id']
+
+    with db.engine_rdwr.connect() as connection:
+        db.statement(db.table.DRAFT_BOX).where(user_id=user_id).limit(1).delete(connection)
+
+        return helper.response_ok({'status': 'success'})
