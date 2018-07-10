@@ -16,7 +16,8 @@ class Table:
     IPFS_FILES = 'ipfs_files'
     IPFS_FILES_PRIVATE = 'ipfs_files_private'
 
-    DRAFT_BOX = 'user_post_drafts'
+    POST_DRAFTS = 'post_drafts'
+    DRAFT_BOX = 'user_post_drafts'  # @deprecated
 
     @staticmethod
     def board(board_type):

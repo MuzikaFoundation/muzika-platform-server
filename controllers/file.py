@@ -26,11 +26,11 @@ def _upload_file():
 
     # if the number of files uploaded is not one
     if len(request.files) != 1:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     # if not support file type
     if file_type not in s3_policy:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     file = next(iter(request.files.values()))
     file_name = file.filename
@@ -41,7 +41,7 @@ def _upload_file():
 
     # if the file size is too big
     if file.tell() == read_len:
-        return helper.response_err(ERR.FILE_SIZE_LIMIT_EXCEEDED)
+        return helper.response_err(ERR.COMMON.FILE_SIZE_LIMIT_EXCEEDED)
 
     # check the number of file user uploaded for defending to upload too many files.
     upload_log_stmt = """
@@ -60,7 +60,7 @@ def _upload_file():
         # if the file uploaded too much, reject the request
         upload_cnt_limit = s3_policy[file_type].get('upload_count_limit')
         if upload_cnt_limit and upload_cnt >= upload_cnt_limit:
-            return helper.response_err(ERR.TOO_MANY_REQUEST)
+            return helper.response_err(ERR.COMMON.TOO_MANY_REQUEST)
 
         file = profile_bucket.put(
             connection=connection,
@@ -70,7 +70,7 @@ def _upload_file():
         )
 
         if not file:
-            return helper.response_err(ERR.UPLOAD_FAIL)
+            return helper.response_err(ERR.COMMON.UPLOAD_FAIL)
 
         return helper.response_ok({
             'file_id': file['file_id']

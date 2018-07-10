@@ -21,7 +21,7 @@ def _get_board_posts(board_type):
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     from modules.pagination import Pagination
     from modules import board
@@ -74,7 +74,7 @@ def _post_to_community(board_type):
     user_id = request.user['user_id']
 
     if not isinstance(title, str) or not isinstance(content, str) or not isinstance(tags, (list, type(None))):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     # remove duplication
     tags = set(tags)
@@ -84,7 +84,7 @@ def _post_to_community(board_type):
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     tag_insert_query_str = """
             INSERT INTO `{}` (`post_id`, `name`)
@@ -103,7 +103,7 @@ def _post_to_community(board_type):
 
         # if parameter is invalid or does not exist
         if not isinstance(genre, str) or not isinstance(youtube_video_id, str):
-            return helper.response_err(ERR.INVALID_REQUEST_BODY)
+            return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
         post_statement.set(genre=genre, youtube_video_id=youtube_video_id)
     elif board_type == 'music':
@@ -111,7 +111,7 @@ def _post_to_community(board_type):
 
         # if post type is not valid
         if post_type not in MUSIC_POST_TYPE:
-            return helper.response_err(ERR.INVALID_REQUEST_BODY)
+            return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
         post_statement.set(type=post_type)
 
@@ -127,7 +127,7 @@ def _post_to_community(board_type):
                 .where(tx_hash=tx_hash).limit(1).select(connection).fetchone()
 
             if tx_hash_exists:
-                return helper.response_err(ERR.TX_HASH_DUPLICATED)
+                return helper.response_err(ERR.COMMON.TX_HASH_DUPLICATED)
 
             # if the board type is music, register IPFS files and contracts
             ipfs_file_id = ipfs.register_object(
@@ -161,7 +161,7 @@ def _get_community_post(board_type, post_id):
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     if board_type == 'music':
         # if board type is music, show with related music contracts and IPFS file.
@@ -196,7 +196,7 @@ def _get_community_post(board_type, post_id):
 
         # if the post does not exist,
         if post is None:
-            return helper.response_err(ERR.NOT_EXIST)
+            return helper.response_err(ERR.COMMON.NOT_EXIST)
         post = db.to_relation_model(post)
 
         if board_type == 'music':
@@ -226,7 +226,7 @@ def _modify_post(board_type, post_id):
 
     # if invalid parameter type
     if not isinstance(title, str) or not isinstance(content, str) or not isinstance(tags, (type(None), list)):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     # remove duplication
     tags = set(tags)
@@ -235,7 +235,7 @@ def _modify_post(board_type, post_id):
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     # construct a default column that all boards have
     statement = db.Statement(table_name) \
@@ -262,7 +262,7 @@ def _modify_post(board_type, post_id):
         youtube_video_id = parse_youtube_id(json_form.get('youtube_url'))
 
         if not isinstance(genre, str) or not isinstance(youtube_video_id, str):
-            return helper.response_err(ERR.INVALID_REQUEST_BODY)
+            return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
         statement.set(youtube_video_id=youtube_video_id, genre=genre)
     elif board_type == 'music':
@@ -274,7 +274,7 @@ def _modify_post(board_type, post_id):
 
         # if the post does not exist or is not the user's post
         if not modified:
-            return helper.response_err(ERR.AUTHENTICATION_FAILED)
+            return helper.response_err(ERR.COMMON.AUTHENTICATION_FAILED)
 
         current_tags = db.Statement(db.table.tags(board_type)).columns('name') \
             .where(post_id=post_id).select(connection)
@@ -310,7 +310,7 @@ def _delete_post(board_type, post_id):
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     statement = db.Statement(table_name) \
         .set(status='deleted') \
@@ -321,6 +321,6 @@ def _delete_post(board_type, post_id):
 
         # if the post does not exist or is not the user's post
         if not deleted:
-            return helper.response_err(ERR.AUTHENTICATION_FAILED)
+            return helper.response_err(ERR.COMMON.AUTHENTICATION_FAILED)
 
         return helper.response_ok({'status': 'success'})

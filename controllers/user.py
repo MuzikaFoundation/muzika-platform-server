@@ -45,7 +45,7 @@ def _get_user(address):
 
     # if invalid address format, don't generate message
     if not check_address_format(address):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     web3 = get_web3()
     web3.toChecksumAddress(address)
@@ -59,7 +59,7 @@ def _get_user(address):
         ).fetchone()
 
         if user is None:
-            return helper.response_err(ERR.NOT_EXIST)
+            return helper.response_err(ERR.COMMON.NOT_EXIST)
 
         return helper.response_ok(db.to_relation_model(user))
 
@@ -74,7 +74,7 @@ def _get_user_sign_message(address):
 
     # if invalid address format, don't generate message
     if not check_address_format(address):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     return helper.response_ok(get_message_for_user(address, always_new=True))
 
@@ -92,7 +92,7 @@ def _login():
 
     platform_type = json_form.get('platform_type')
     if platform_type not in PLATFORM_TYPES:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     web3 = get_web3()
 
@@ -108,7 +108,7 @@ def _login():
         if jwt_token:
             return helper.response_ok(jwt_token)
         else:
-            return helper.response_err(ERR.AUTHENTICATION_FAILED)
+            return helper.response_err(ERR.COMMON.AUTHENTICATION_FAILED)
 
 
 def _change_user_info(column_name, max_len, min_len=0):
@@ -117,13 +117,13 @@ def _change_user_info(column_name, max_len, min_len=0):
     value = json_form.get(column_name)
 
     if len(value) > max_len or len(value) < min_len:
-        return helper.response_err(ERR.TOO_LONG_PARAMETER)
+        return helper.response_err(ERR.COMMON.TOO_LONG_PARAMETER)
 
     with db.engine_rdwr.connect() as connection:
         try:
             db.statement(db.table.USERS).set(**{column_name:value}).where(user_id=user_id).update(connection)
         except IntegrityError:
-            return helper.response_err(ERR.ALREADY_EXIST)
+            return helper.response_err(ERR.COMMON.ALREADY_EXIST)
         return helper.response_ok({'status': 'success'})
 
 
@@ -149,13 +149,13 @@ def _put_user_info():
             change_value.update({column: json_form.get(column)})
 
         if column == 'name' and len(change_value['name']) < 1:
-            return helper.response_err(ERR.TOO_SHORT_PARAMETER)
+            return helper.response_err(ERR.COMMON.TOO_SHORT_PARAMETER)
 
     with db.engine_rdwr.connect() as connection:
         try:
             db.statement(db.table.USERS).set(**change_value).where(user_id=user_id).update(connection)
         except IntegrityError:
-            return helper.response_err(ERR.ALREADY_EXIST)
+            return helper.response_err(ERR.COMMON.ALREADY_EXIST)
         return helper.response_ok({'status': 'success'})
 
 
@@ -197,7 +197,7 @@ def _change_user_profile():
     profile_file_id = request.user.get('profile_file_id')
 
     if not isinstance(profile_file_id, int):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     with db.engine_rdwr.connect() as connection:
         db.statement(db.table.USERS).set(profile_file_id=profile_file_id).where(user_id=user_id).update(connection)
@@ -234,7 +234,7 @@ def _put_draftbox(board_type):
     # if json is null, don't clear original data for safety.
     # the data can be cleared by DELETE method.
     if not draft_box:
-        return helper.response_err(ERR.NOT_ALLOWED_CONTENT_TYPE)
+        return helper.response_err(ERR.COMMON.NOT_ALLOWED_CONTENT_TYPE)
 
     put_query_stmt = """
         INSERT INTO `user_post_drafts`

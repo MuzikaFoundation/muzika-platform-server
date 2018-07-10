@@ -160,7 +160,7 @@ def jwt_check(func):
         try:
             decoded_token = jwt.decode(token, JWT_SECRET_KEY, verify=True, audience=AppConfig.issuer)
         except jwt.exceptions.InvalidTokenError:
-            return helper.response_err(ERR.INVALID_SIGNATURE)
+            return helper.response_err(ERR.COMMON.INVALID_SIGNATURE)
         address, sign_message_id = decoded_token['jti'].split('-')
 
         # get sign message for calculating hash
@@ -204,7 +204,7 @@ def jwt_check(func):
 
             # if decoded hash is not equal to calculated hash from db, it's invalid token
             if decoded_hash != real_hash:
-                return helper.response_err(ERR.INVALID_SIGNATURE)
+                return helper.response_err(ERR.COMMON.INVALID_SIGNATURE)
 
             # authenticated and inject user information
             request.user = user_row

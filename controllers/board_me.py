@@ -43,7 +43,7 @@ def _get_my_post(board_type):
     page = request.args.get('page', 1)
 
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     from modules import board
 

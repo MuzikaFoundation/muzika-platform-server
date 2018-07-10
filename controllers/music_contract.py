@@ -29,13 +29,13 @@ def _get_paper_file(contract_address):
 
     # not support downloading without encryption
     if not isinstance(public_key, str):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     # parse public key
     try:
         public_key = RSA.import_key(public_key)
     except ValueError:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     user_address = request.user['address']
 
@@ -45,7 +45,7 @@ def _get_paper_file(contract_address):
 
     if not contract.purchased(user_address, {'from': user_address}):
         # if the user hasn't purchased this paper
-        return helper.response_err(ERR.AUTHENTICATION_FAILED)
+        return helper.response_err(ERR.COMMON.AUTHENTICATION_FAILED)
 
     key_query_statement = """
         SELECT 
@@ -67,7 +67,7 @@ def _get_paper_file(contract_address):
 
         # if the contract is not registered in the server or does not have IPFS file
         if not key_query:
-            return helper.response_err(ERR.NOT_EXIST)
+            return helper.response_err(ERR.COMMON.NOT_EXIST)
 
         ipfs_hash = key_query['ipfs_hash']
         encrypted = key_query['encrypted']
@@ -98,7 +98,7 @@ def _post_music_purchase():
     requester = request.user['address']
 
     if not txhash_validation(tx_hash):
-        return helper.response_err(ERR.INVALID_TX_HASH)
+        return helper.response_err(ERR.COMMON.INVALID_TX_HASH)
 
     with db.engine_rdonly.connect() as connection:
         payment_id = db.statement(db.table.MUSIC_PAYMENTS).set(

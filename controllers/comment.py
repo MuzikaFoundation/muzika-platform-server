@@ -19,7 +19,7 @@ def _get_board_post_comments(board_type, post_id):
 
     # if unknown board type
     if not comment_table_name or not board_table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     fetch_query_str = """
         SELECT `c`.*, '!user', `u`.*
@@ -62,13 +62,13 @@ def _post_board_comment(board_type, post_id):
     user_id = request.user['user_id']
 
     if not isinstance(content, str):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     table_name = db.table.comment(board_type)
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     statement = db.Statement(table_name).set(
         user_id=user_id,
@@ -81,7 +81,7 @@ def _post_board_comment(board_type, post_id):
             comment_id = statement.insert(connection).lastrowid
         except IntegrityError:
             # if failed to insert
-            return helper.response_err(ERR.INVALID_REQUEST_BODY)
+            return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
         return helper.response_ok({'comment_id': comment_id})
 
@@ -92,7 +92,7 @@ def _get_board_comment(board_type, comment_id):
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     statement = db.Statement(table_name).where(comment_id=comment_id, status='posted')
     subcomments_query_str = """
@@ -108,7 +108,7 @@ def _get_board_comment(board_type, comment_id):
 
         # if the comment does not exist
         if not comment:
-            return helper.response_err(ERR.NOT_EXIST)
+            return helper.response_err(ERR.COMMON.NOT_EXIST)
 
         comment = db.to_relation_model(comment)
         subcomments = connection.execute(text(subcomments_query_str),
@@ -127,13 +127,13 @@ def _post_board_subcomment(board_type, parent_comment_id):
     user_id = request.user['user_id']
 
     if not isinstance(content, str) or not isinstance(parent_comment_id, int):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     table_name = db.table.comment(board_type)
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     statement = db.Statement(table_name).set(user_id=user_id, parent_comment_id=parent_comment_id, content=content)
 
@@ -151,7 +151,7 @@ def _post_board_subcomment(board_type, parent_comment_id):
             comment_id = statement.insert(connection).lastrowid
         except IntegrityError:
             # if failed to insert
-            return helper.response_err(ERR.INVALID_REQUEST_BODY)
+            return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
         connection.execute(text(parent_update_statement), parent_comment_id=parent_comment_id)
 
@@ -167,13 +167,13 @@ def _modify_board_comment(board_type, comment_id):
     user_id = request.user['user_id']
 
     if not isinstance(content, str):
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     table_name = db.table.comment(board_type)
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     statement = db.Statement(table_name).set(content=content)\
         .where(user_id=user_id, comment_id=comment_id, status='posted')
@@ -183,7 +183,7 @@ def _modify_board_comment(board_type, comment_id):
         if updated:
             return helper.response_ok({'status': 'success'})
         else:
-            return helper.response_err(ERR.AUTHENTICATION_FAILED)
+            return helper.response_err(ERR.COMMON.AUTHENTICATION_FAILED)
 
 
 @blueprint.route('/board/<board_type>/comment/<int:comment_id>', methods=['DELETE'])
@@ -195,7 +195,7 @@ def _delete_board_comment(board_type, comment_id):
 
     # if unknown board type
     if not table_name:
-        return helper.response_err(ERR.INVALID_REQUEST_BODY)
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
 
     statement = db.Statement(table_name).set(status='deleted')\
         .where(user_id=user_id, comment_id=comment_id, status='posted')
@@ -204,7 +204,7 @@ def _delete_board_comment(board_type, comment_id):
         deleted = statement.update(connection).rowcount
 
         if not deleted:
-            return helper.response_err(ERR.AUTHENTICATION_FAILED)
+            return helper.response_err(ERR.COMMON.AUTHENTICATION_FAILED)
 
         return helper.response_ok({'status': 'success'})
 

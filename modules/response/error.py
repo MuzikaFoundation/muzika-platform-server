@@ -1,4 +1,3 @@
-
 from flask import request
 from modules.lang import get_best_fit_language
 
@@ -25,7 +24,7 @@ class ErrorResponse:
             return self.error_msg[get_best_fit_language()]
 
 
-class ERR:
+class _ErrCommon:
     INVALID_REQUEST_BODY = ErrorResponse(
         code=1,
         en='Invalid request body.',
@@ -103,3 +102,22 @@ class ERR:
         en='Server blocks your requests temporarily because of too many requests',
         ko='잦은 요청으로 인하여 일시적으로 차단되었습니다.'
     )
+
+
+class _ErrDraft:
+    NOT_EXISTS = ErrorResponse(
+        code=101,
+        en='Draft not exists',
+        ko='초본이 존재하지 않습니다.'
+    )
+
+    ALREADY_UPLOADED = ErrorResponse(
+        code=101,
+        en='It already uploaded to new posts',
+        ko='이미 업로드 된 게시글입니다.'
+    )
+
+
+class ERR:
+    COMMON = _ErrCommon
+    DRAFT = _ErrDraft
