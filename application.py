@@ -6,7 +6,7 @@ from flask_cors import CORS
 from config import AppConfig
 from controllers import (
     music_contract, user, file, board, comment, like, seed,
-    board_me)
+    board_me, price)
 from controllers.test import (
     paper_test
 )
@@ -27,6 +27,7 @@ blueprints = [
     comment.blueprint,
     like.blueprint,
     seed.blueprint,
+    price.blueprint,
 ]
 
 production_blueprints = [
