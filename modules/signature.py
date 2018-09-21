@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 
-def validate_signature(web3, address, sig_obj):
+def validate_signature(web3, address, sig_obj, protocol='eth'):
     """
     Validate the signature by signature object.
 
@@ -41,11 +41,15 @@ def validate_signature(web3, address, sig_obj):
 
         message_hash = construct_sign_message(purpose, message, version)
 
-        # recover address from hash and signature
-        recover_address = web3.eth.account.recoverHash(message_hash, signature=signature)
+        if protocol == 'eth':
+            # recover address from hash and signature
+            recover_address = web3.eth.account.recoverHash(message_hash, signature=signature)
+            # if equal to address, it's valid signature.
+            return recover_address.lower() == address.lower()
 
-        # if equal to address, it's valid signature.
-        return recover_address.lower() == address.lower()
+        elif protocol == 'ont':
+            # TODO: validate ontology signing message
+            pass
     except TypeError as e:
         # if unsupported signature version or invalid variable format, fail to validate
         return False

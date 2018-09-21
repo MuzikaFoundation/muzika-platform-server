@@ -24,7 +24,7 @@ JWT_SECRET_KEY = jwt_json['jwt_secret_key']
 PLATFORM_TYPES = ['electron', 'app', 'web']
 
 
-def generate_jwt_token(connection, web3, address, signature, **kwargs):
+def generate_jwt_token(connection, web3, address, signature, protocol='eth', **kwargs):
     """
     Validate the user signature and if authenticated, generate a new JWT token for the user.
 
@@ -55,12 +55,14 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
         return None
 
     """
-    Get sign message and its private key. The private key is used for the hash value in JWT token.
+    Get sign message and its private key. Private key is not account private key, but it's the
+    internally saved random bytes in database for random hashing. The private key is used for 
+    the hash value in JWT token.
     
     get random-generated sign message from database (get by message_id),
     """
 
-    sign_message = get_message_for_user(address, always_new=False)
+    sign_message = get_message_for_user(address, always_new=False, protocol=protocol)
 
     tz = arrow.now(AppConfig.timezone).datetime
 
@@ -76,7 +78,7 @@ def generate_jwt_token(connection, web3, address, signature, **kwargs):
     if not validate_signature(web3, address, sig_obj={'purpose': 'Login to Muzika!',
                                                       'message': sign_message,
                                                       'signature': signature,
-                                                      'signature_version': signature_version}):
+                                                      'signature_version': signature_version}, protocol=protocol):
         return None
 
     # get user id by address

@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from modules import database as db
-from modules.ethereum_address import check_address_format
+from modules.account_address import check_address_format, check_eth_address_format, check_ont_address_format
 from modules.login import jwt_check, PLATFORM_TYPES
 from modules.response.error import ERR
 from modules.response import helper
@@ -79,12 +79,43 @@ def _get_user_sign_message(address):
     return helper.response_ok(get_message_for_user(address, always_new=True))
 
 
+@blueprint.route('/user/eth/<address>/sign-message', methods=['GET'])
+def _get_user_eth_sign_message(address):
+    """
+    Returns an user information by ethereum wallet address.
+
+    If user(address) does not exist, give a random message for signing
+    """
+
+    # if invalid address format, don't generate message
+    if not check_eth_address_format(address):
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
+
+    return helper.response_ok(get_message_for_user(address, always_new=True, protocol='eth'))
+
+
+@blueprint.route('/user/ont/<address>/sign-message', methods=['GET'])
+def _get_user_ont_sign_message(address):
+    """
+        Returns an user information by ontology account address.
+
+        If user(address) does not exist, give a random message for signing
+        """
+
+    # if invalid address format, don't generate message
+    if not check_ont_address_format(address):
+        return helper.response_err(ERR.COMMON.INVALID_REQUEST_BODY)
+
+    return helper.response_ok(get_message_for_user(address, always_new=True, protocol='ont'))
+
+
 @blueprint.route('/register', methods=['POST'])
 @blueprint.route('/login', methods=['POST'])
 def _login():
     from modules.login import generate_jwt_token
 
     json_form = request.get_json(force=True, silent=True)
+    protocol = json_form.get('protocol', 'eth')
     address = json_form.get('address')
     signature = json_form.get('signature')
     signature_version = json_form.get('signature_version', 1)
@@ -102,7 +133,8 @@ def _login():
             web3, address, signature,
             platform_type=platform_type,
             signature_version=signature_version,
-            default_user_name=user_name
+            default_user_name=user_name,
+            protocol=protocol
         )
 
         if jwt_token:

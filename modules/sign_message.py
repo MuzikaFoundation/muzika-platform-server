@@ -49,7 +49,7 @@ def register_sign_message_by_id(connection, user_id, platform_type, message=None
     return message_id, message
 
 
-def get_message_for_user(address, cache=None, always_new=False):
+def get_message_for_user(address, cache=None, always_new=False, protocol='eth'):
     """
     Return a random sign message for the user.
 
@@ -61,7 +61,7 @@ def get_message_for_user(address, cache=None, always_new=False):
 
     cache = cache or MuzikaCache()
     address = address.lower()
-    msg_url = '/db/sign-message/{}'.format(address)
+    msg_url = '/db/{}/sign-message/{}'.format(protocol, address)
     user_message_info = cache().get(msg_url)
 
     if user_message_info is None or always_new is True:
