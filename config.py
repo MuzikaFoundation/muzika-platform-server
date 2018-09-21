@@ -58,7 +58,7 @@ class SignMessageConfig:
     """
     Global constants for sign message
     """
-    unsigned_message_expired_time = 60  # 1 minute
+    unsigned_message_expired_time = 300  # 5 minute
     signed_message_expired_time = 24 * 60 * 60  # 1 day
 
 
