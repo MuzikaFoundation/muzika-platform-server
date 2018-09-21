@@ -1,0 +1,13 @@
+web3
+ontology-python-sdk
+redis
+requests
+SQLAlchemy
+arrow
+celery
+boto3
+Flask
+Flask-Cors
+ipfsapi
+PyMySQL
+PyJWT
