@@ -49,7 +49,7 @@ def generate_jwt_token(connection, web3, address, signature, protocol='eth', **k
     signature_version = kwargs.get('signature_version')
     default_user_name = kwargs.get('default_user_name', None)
     platform_type = kwargs.get('platform_type')
-    checksum_address = web3.toChecksumAddress(address)
+    checksum_address = web3.toChecksumAddress(address) if protocol == 'eth' else address
 
     if platform_type not in PLATFORM_TYPES:
         return None
