@@ -1,5 +1,4 @@
 web3
-ontology-python-sdk
 redis
 requests
 SQLAlchemy
@@ -11,3 +10,4 @@ Flask-Cors
 ipfsapi
 PyMySQL
 PyJWT
+git+https://github.com/MuzikaFoundation/ontology-python-sdk.git
