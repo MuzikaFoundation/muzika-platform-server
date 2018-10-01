@@ -18,7 +18,7 @@ deploy:develop:
     - python3 scripts/secrets.py --download --bucket ${S3_BUCKET}
   script:
     - python3 run_tests.py
-    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*"
+    - zip -r dist.zip ./ -x ".git/*" "venv/*" "deploy/*" ".idea/*" "*/__pycache__/*" "muzika-contract/node_modules/**/*"
     - sh ./scripts/elb-deploy.sh
   only:
     - develop
