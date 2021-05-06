@@ -24,7 +24,7 @@ eth-rlp==0.1.2
 eth-typing==1.3.0
 eth-utils==1.2.2
 Flask==1.0.2
-Flask-Cors==3.0.6
+Flask-Cors==3.0.9
 hexbytes==0.1.0
 idna==2.7
 ipfsapi==0.4.3
