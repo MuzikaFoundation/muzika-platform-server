@@ -1,5 +1,5 @@
 amqp==2.3.2
-arrow==0.12.1
+arrow==0.15.1
 asn1crypto==0.24.0
 attrdict==2.0.0
 base58==1.0.2
